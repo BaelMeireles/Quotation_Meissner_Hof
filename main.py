@@ -19,6 +19,10 @@ class SearchScreen(Screen):
     pass
 
 
+class ResultScreen(Screen):
+    pass
+
+
 class SendScreen(Screen):
     pass
 
@@ -40,13 +44,21 @@ class QuotationApp(MDApp):
         self.theme_cls.accent_palette = "Gray"
         return Builder.load_file("main.kv")
 
-    def call_history(self):
-        self.root.transition.direction = "right"
-        self.root.current = "history"
-
     def call_login(self):
         self.root.transition.direction = "right" if self.root.current == "search" else "left"
         self.root.current = "login"
+
+    def call_search(self):
+        self.root.transition.direction = "right"
+        self.root.current = "search"
+
+    def call_result(self):
+        self.root.transition.direction = "right"
+        self.root.current = "result"
+
+    def call_history(self):
+        self.root.transition.direction = "right"
+        self.root.current = "history"
 
     def get_date(self, instance, value, date_range):
         pass

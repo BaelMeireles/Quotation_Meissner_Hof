@@ -1,6 +1,7 @@
 WindowManager:
     LoginScreen:
     SearchScreen:
+    ResultScreen:
     SendScreen:
     HistoryScreen:
 
@@ -9,9 +10,9 @@ WindowManager:
 
     MDTopAppBar:
         title: "Entrar"
-        pos_hint:{"center_y": .95}
+        pos_hint:{"center_y": .97}
         elevation: 3
-        size_hint: (1, .1)
+        size_hint: (1, .09)
         left_action_items: [["menu", lambda x: app.call_history()]]
 
     Image:
@@ -100,40 +101,112 @@ WindowManager:
         padding: 10
 
         MDLabel:
-            text: "ATENÇÃO! Se realmente deseja usar esse aplicativo, o faça por sua conta e risco. O desenvolvedor não se responsabiliza por nenhuma adversidade causada por mal uso alheio.\n\nGabriel Meireles"
+            text: "ATENÇÃO! Não use este aplicativo sem receber instruções. O desenvolvedor não se responsabiliza por nenhuma adversidade causada por mal uso alheio.\n\nGabriel Meireles"
             font_size: 11
             halign : "center"
             pos_hint: {"center_x": .5, "center_y": .07}
-
-
-
-
 
 <SearchScreen>:
     name: "search"
 
     MDTopAppBar:
         title: "Pesquisar"
-        pos_hint:{"center_y": .95}
-        size_hint: (1, .1)
+        pos_hint:{"center_y": .97}
+        size_hint: (1, .09)
         elevation: 3
-        left_action_items: [["menu", lambda x: app.call_login()]]
+        left_action_items: [["arrow-left", lambda x: app.call_login()]]
 
     MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: 20
+        padding: 20
 
+        MDBoxLayout:
+            id: search_layout
+            orientation: "vertical"
+            adaptive_height: True
 
+        MDRaisedButton:
+            id: search_button
+            text: "Pesquisar"
+            text_color: 1,1,1,1
+            size_hint: .5, 1
+            pos_hint: {"center_x": .5}
+            on_release:
+                app.root.transition.direction = "left"
+                app.root.current = "result"
+
+<ResultScreen>
+    name: "result"
+
+    MDTopAppBar:
+        title: "Acomodações"
+        pos_hint:{"center_y": .97}
+        size_hint: (1, .09)
+        elevation: 3
+        left_action_items: [["arrow-left", lambda x: app.call_search()]]
+
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: 20
+        padding: 20
+
+        MDBoxLayout:
+            id: result_layout
+            orientation: "vertical"
+            adaptive_height: True
+
+        MDRaisedButton:
+            id: confirm_button
+            text: "Confirmar"
+            text_color: 1,1,1,1
+            size_hint: .5, 1
+            pos_hint: {"center_x": .5}
+            on_release:
+                app.root.transition.direction = "left"
+                app.root.current = "send"
 <SendScreen>:
     name:"send"
 
+    MDTopAppBar:
+        title: "Mensagens"
+        pos_hint:{"center_y": .97}
+        size_hint: (1, .09)
+        elevation: 3
+        left_action_items: [["arrow-left", lambda x: app.call_result()]]
+
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: 20
+        padding: 20
+
+        MDBoxLayout:
+            id: send_layout
+            orientation: "vertical"
+            adaptive_height: True
+
+        MDRaisedButton:
+            id: send_button
+            text: "Enviar"
+            text_color: 1,1,1,1
+            size_hint: .5, 1
+            pos_hint: {"center_x": .5}
+            on_release:
+                app.root.transition.direction = "right"
+                app.root.current = "search"
 
 <HistoryScreen>:
     name:"history"
 
     MDTopAppBar:
         title: "Histórico"
-        pos_hint:{"center_y": .95}
-        size_hint: (1, .1)
+        pos_hint:{"center_y": .97}
+        size_hint: (1, .09)
         elevation: 3
         right_action_items: [["arrow-right", lambda x: app.call_login()]]
 
     MDBoxLayout:
+        orientation: "vertical"
