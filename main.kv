@@ -1,0 +1,139 @@
+WindowManager:
+    LoginScreen:
+    SearchScreen:
+    SendScreen:
+    HistoryScreen:
+
+<LoginScreen>
+    name:"login"
+
+    MDTopAppBar:
+        title: "Entrar"
+        pos_hint:{"center_y": .95}
+        elevation: 3
+        size_hint: (1, .1)
+        left_action_items: [["menu", lambda x: app.call_history()]]
+
+    Image:
+        source: "images/logo.png"
+        size_hint: (.5, .5)
+        pos_hint: {"center_x": .5, "center_y": .78}
+
+    MDLabel:
+        text: "Cotações Meissner Hof"
+        bold: True
+        halign: "center"
+        pos_hint: {"center_x": .5, "center_y": .66}
+
+    MDCard:
+        orientation: "vertical"
+        size_hint: (None, None)
+        size: 250, 280
+        pos_hint: {"center_x": .5, "center_y": .4}
+        padding: 25
+        spacing:25
+        elevation:3
+
+        MDGridLayout:
+            cols: 2
+            spacing: 20
+            adaptive_height: True
+
+            MDTextFieldRect:
+                id: user_number_field
+                multiline: False
+                halign: "center"
+                input_filter: "int"
+                hint_text: "Nº"
+                size_hint: .3, None
+                height: "30dp"
+
+            MDTextFieldRect:
+                id: user_name_field
+                disabled: True
+                multiline: False
+                halign: "center"
+                hint_text: "Nome"
+                size_hint: .7, None
+                height: "30dp"
+
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: 20
+            orientation: "vertical"
+
+            MDTextFieldRect:
+                id: user_password_field
+                password: True
+                multiline: False
+                halign: "center"
+                hint_text: "Senha"
+                size_hint: 1, None
+                height: "30dp"
+                pos_hint: {"center_x": .5, "center_y": .9}
+
+            MDRaisedButton:
+                id: login_button
+                text: "Entrar"
+                text_color: 1,1,1,1
+                size_hint: 1, 1
+                pos_hint: {"center_x": .5}
+                on_release:
+                    app.root.transition.direction = "left"
+                    app.root.current = "search"
+
+            MDTextButton:
+                id: register_user_button
+                text: "Cadastrar Usuário"
+                color: app.theme_cls.primary_color
+                pos_hint: {"center_x": .5}
+
+            MDLabel:
+                id: login_alert
+                text: ""
+                halign: "center"
+                size_hint: 1, None
+                height: "30dp"
+                pos_hint: {"center_x": .5}
+
+    MDBoxLayout:
+        padding: 10
+
+        MDLabel:
+            text: "ATENÇÃO! Se realmente deseja usar esse aplicativo, o faça por sua conta e risco. O desenvolvedor não se responsabiliza por nenhuma adversidade causada por mal uso alheio.\n\nGabriel Meireles"
+            font_size: 11
+            halign : "center"
+            pos_hint: {"center_x": .5, "center_y": .07}
+
+
+
+
+
+<SearchScreen>:
+    name: "search"
+
+    MDTopAppBar:
+        title: "Pesquisar"
+        pos_hint:{"center_y": .95}
+        size_hint: (1, .1)
+        elevation: 3
+        left_action_items: [["menu", lambda x: app.call_login()]]
+
+    MDBoxLayout:
+
+
+<SendScreen>:
+    name:"send"
+
+
+<HistoryScreen>:
+    name:"history"
+
+    MDTopAppBar:
+        title: "Histórico"
+        pos_hint:{"center_y": .95}
+        size_hint: (1, .1)
+        elevation: 3
+        right_action_items: [["arrow-right", lambda x: app.call_login()]]
+
+    MDBoxLayout:
