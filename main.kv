@@ -11,7 +11,7 @@ WindowManager:
     MDTopAppBar:
         title: "Entrar"
         pos_hint:{"center_y": .97}
-        elevation: 3
+        elevation: 0
         size_hint: (1, .09)
         left_action_items: [["menu", lambda x: app.call_history()]]
 
@@ -81,6 +81,7 @@ WindowManager:
                 pos_hint: {"center_x": .5}
                 on_release:
                     app.root.transition.direction = "left"
+                    app.root.transition.duration = .05
                     app.root.current = "search"
 
             MDTextButton:
@@ -88,6 +89,7 @@ WindowManager:
                 text: "Cadastrar Usuário"
                 color: app.theme_cls.primary_color
                 pos_hint: {"center_x": .5}
+                on_release: app.register()
 
             MDLabel:
                 id: login_alert
@@ -110,10 +112,10 @@ WindowManager:
     name: "search"
 
     MDTopAppBar:
-        title: "Pesquisar"
+        title: "Definir Busca"
         pos_hint:{"center_y": .97}
         size_hint: (1, .09)
-        elevation: 3
+        elevation: 0
         left_action_items: [["arrow-left", lambda x: app.call_login()]]
 
     MDBoxLayout:
@@ -126,6 +128,17 @@ WindowManager:
             id: search_layout
             orientation: "vertical"
             adaptive_height: True
+
+            MDRaisedButton:
+                id: period_confirm_button
+                text: "Período"
+                text_color: 1,1,1,1
+                size_hint: .7, 1
+                pos_hint: {"center_x": .5}
+                on_release: app.show_date_picker()
+
+            MDDropdownMenu:
+
 
         MDRaisedButton:
             id: search_button
@@ -144,7 +157,7 @@ WindowManager:
         title: "Acomodações"
         pos_hint:{"center_y": .97}
         size_hint: (1, .09)
-        elevation: 3
+        elevation: 0
         left_action_items: [["arrow-left", lambda x: app.call_search()]]
 
     MDBoxLayout:
@@ -174,7 +187,7 @@ WindowManager:
         title: "Mensagens"
         pos_hint:{"center_y": .97}
         size_hint: (1, .09)
-        elevation: 3
+        elevation: 0
         left_action_items: [["arrow-left", lambda x: app.call_result()]]
 
     MDBoxLayout:
@@ -205,7 +218,7 @@ WindowManager:
         title: "Histórico"
         pos_hint:{"center_y": .97}
         size_hint: (1, .09)
-        elevation: 3
+        elevation: 0
         right_action_items: [["arrow-right", lambda x: app.call_login()]]
 
     MDBoxLayout:
