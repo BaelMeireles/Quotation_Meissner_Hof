@@ -79,10 +79,7 @@ WindowManager:
                 text_color: 1,1,1,1
                 size_hint: 1, 1
                 pos_hint: {"center_x": .5}
-                on_release:
-                    app.root.transition.direction = "left"
-                    app.root.transition.duration = .05
-                    app.root.current = "search"
+                on_release: app.call_search()
 
             MDTextButton:
                 id: register_user_button
@@ -94,6 +91,7 @@ WindowManager:
             MDLabel:
                 id: login_alert
                 text: ""
+                bold: True
                 halign: "center"
                 size_hint: 1, None
                 height: "30dp"
@@ -125,20 +123,92 @@ WindowManager:
         padding: 20
 
         MDBoxLayout:
-            id: search_layout
             orientation: "vertical"
             adaptive_height: True
+            spacing: 20
 
             MDRaisedButton:
-                id: period_confirm_button
-                text: "Período"
+                id: period_button
+                font_size: 18
                 text_color: 1,1,1,1
-                size_hint: .7, 1
+                text: "[b]Período[/b]"
+                size_hint: 1, 1
                 pos_hint: {"center_x": .5}
                 on_release: app.show_date_picker()
 
-            MDDropdownMenu:
+            MDRectangleFlatButton:
+                id: adults_menu
+                text: "[b]Adultos[/b]"
+                font_size: 18
+                line_width: 2
+                text_color: app.theme_cls.accent_color
+                size_hint: 1, 1
+                pos_hint: {"center_x": .5}
+                on_release: app.adults_menu.open()
 
+            MDGridLayout:
+                cols: 2
+                adaptive_height: True
+                spacing: 5
+
+                MDRectangleFlatButton:
+                    id: children_menu
+                    text: "[b]Crianças:[/b]"
+                    font_size: 16
+                    line_width: 2
+                    text_color: app.theme_cls.accent_color
+                    size_hint: 1, 1
+                    pos_hint: {"center_x": .5}
+                    on_release: app.children_menu.open()
+
+                MDRectangleFlatButton:
+                    id: child1_menu
+                    disabled: True
+                    text: "[b]-[/b]"
+                    font_size: 16
+                    line_width: 2
+                    text_color: app.theme_cls.accent_color
+                    size_hint: 1, 1
+                    pos_hint: {"center_x": .5}
+                    on_release: app.child1_menu.open()
+
+                MDRectangleFlatButton:
+                    id: child2_menu
+                    disabled: True
+                    text: "[b]-[/b]"
+                    font_size: 16
+                    line_width: 2
+                    text_color: app.theme_cls.accent_color
+                    size_hint: 1, 1
+                    pos_hint: {"center_x": .5}
+                    on_release: app.child2_menu.open()
+
+                MDRectangleFlatButton:
+                    id: child3_menu
+                    disabled: True
+                    text: "[b]-[/b]"
+                    font_size: 16
+                    line_width: 2
+                    text_color: app.theme_cls.accent_color
+                    size_hint: 1, 1
+                    pos_hint: {"center_x": .5}
+                    on_release: app.child3_menu.open()
+
+            MDTextFieldRect:
+                id: promo_field
+                multiline: False
+                halign: "center"
+                hint_text: "Promoção"
+                size_hint: 1, None
+                height: "30dp"
+                pos_hint: {"center_x": .5}
+
+            MDLabel:
+                id: search_alert
+                text:""
+                bold: True
+                halign : "center"
+                pos_hint: {"center_x": .5}
 
         MDRaisedButton:
             id: search_button
@@ -146,9 +216,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release:
-                app.root.transition.direction = "left"
-                app.root.current = "result"
+            on_release: app.call_result()
 
 <ResultScreen>
     name: "result"
@@ -177,9 +245,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release:
-                app.root.transition.direction = "left"
-                app.root.current = "send"
+            on_release: app.call_send()
 <SendScreen>:
     name:"send"
 
@@ -207,9 +273,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release:
-                app.root.transition.direction = "right"
-                app.root.current = "search"
+            on_release: app.call_search()
 
 <HistoryScreen>:
     name:"history"
