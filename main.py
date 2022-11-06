@@ -43,12 +43,12 @@ class QuotationApp(MDApp):
     child1 = None
     child2 = None
     child3 = None
+    promo = None
     adults_menu = None
     children_menu = None
     child1_menu = None
     child2_menu = None
     child3_menu = None
-    promo = None
 
     def call_login(self):
         self.root.get_screen("login").ids.login_alert.text = ""
