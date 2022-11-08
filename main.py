@@ -3,6 +3,7 @@ from kivy.config import Config
 Config.set('graphics', 'resizable', 0)
 
 import datetime
+import sqlite3
 from kivy.lang import Builder
 from kivy.core.window import Window
 # from kivy.metrics import dp
@@ -44,25 +45,74 @@ class QuotationApp(MDApp):
     child2 = None
     child3 = None
     promo = None
+
+    user_name = None
+    user_password = None
+
     adults_menu = None
     children_menu = None
     child1_menu = None
     child2_menu = None
     child3_menu = None
 
+    con = sqlite3.connect("quotation.db")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE if not exists users_info (
+                                                        user_name TEXT,
+                                                        user_password TEXT)""")
+    cur.execute("""CREATE TABLE if not exists history_info (
+                                                        quotation_date TEXT,
+                                                        quotation_user TEXT,
+                                                        quotation_number TEXT,
+                                                        quotation_values TEXT)""")
+    con.commit()
+
+    admin_check = cur.execute("SELECT user_name FROM users_info WHERE user_name='ADMINISTRADOR'")
+
+    if admin_check.fetchone() is None:
+        cur.execute("INSERT INTO users_info (user_name, user_password) VALUES ('ADMINISTRADOR', '91166863')")
+        con.commit()
+
+    pull_users = cur.execute("SELECT * FROM users_info")
+    pull_users = pull_users.fetchall()
+
+    users_info = {}
+
+    for user in pull_users:
+        users_info[user[0]] = user[1]
+
     def call_login(self):
+        if self.root.current == "history":
+            self.root.get_screen("history").ids.history_alert.color = 0, 1, 0, 1
+            self.root.get_screen("history").ids.history_alert.text = "Carregando..."
+        else:
+            self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+            self.root.get_screen("search").ids.search_alert.text = "Carregando..."
+
         self.root.get_screen("login").ids.login_alert.text = ""
+
+        self.con = sqlite3.connect("quotation.db")
+        self.cur = self.con.cursor()
+        self.cur.execute("CREATE TABLE if not exists users_info (user_name TEXT, user_password TEXT)")
+        self.cur.execute("CREATE TABLE if not exists history_info (date TEXT, user TEXT, number TEXT, values TEXT)")
+        self.con.commit()
+
         self.root.transition.direction = "left" if self.root.current == "history" else "right"
         self.root.transition.duration = .05
         self.root.current = "login"
 
     def register(self):
         pass
-        # self.root.get_screen("login").ids.login_alert.text = "Worked!"
 
     def call_search(self):
-        self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
-        self.root.get_screen("login").ids.login_alert.text = "Carregando..."
+        if self.root.current == "login":
+            self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
+            self.root.get_screen("login").ids.login_alert.text = "Carregando..."
+        else:
+            self.root.get_screen("result").ids.result_alert.color = 0, 1, 0, 1
+            self.root.get_screen("result").ids.result_alert.text = "Carregando..."
+
+        self.root.get_screen("search").ids.search_alert.text = ""
 
         self.adults_menu = MDDropdownMenu(
             caller=self.root.get_screen("search").ids.adults_menu,
@@ -243,19 +293,38 @@ class QuotationApp(MDApp):
         self.child3_menu.dismiss()
 
     def call_result(self):
+        if self.root.current == "search":
+            self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+            self.root.get_screen("search").ids.search_alert.text = "Carregando..."
+        else:
+            self.root.get_screen("send").ids.send_alert.color = 0, 1, 0, 1
+            self.root.get_screen("send").ids.send_alert.text = "Carregando..."
+
+        self.root.get_screen("result").ids.result_alert.text = ""
         self.root.transition.direction = "left" if self.root.current == "search" else "right"
         self.root.transition.duration = .05
         self.root.current = "result"
 
     def call_send(self):
+        self.root.get_screen("result").ids.result_alert.color = 0, 1, 0, 1
+        self.root.get_screen("result").ids.result_alert.text = "Carregando..."
+
+        self.root.get_screen("send").ids.send_alert.text = ""
         self.root.transition.direction = "left" if self.root.current == "result" else "right"
         self.root.transition.duration = .05
         self.root.current = "send"
 
     def call_history(self):
+        self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
+        self.root.get_screen("login").ids.login_alert.text = "Carregando..."
+
+        self.root.get_screen("history").ids.history_alert.text = ""
         self.root.transition.direction = "right" if self.root.current == "login" else "left"
         self.root.transition.duration = .05
         self.root.current = "history"
+
+    def call_print(self):
+        pass
 
     def build(self):
         Window.size = (270, 600)

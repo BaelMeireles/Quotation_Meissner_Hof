@@ -123,6 +123,7 @@ WindowManager:
         padding: 20
 
         MDBoxLayout:
+            id: search_layout
             orientation: "vertical"
             adaptive_height: True
             spacing: 20
@@ -203,12 +204,12 @@ WindowManager:
                 height: "30dp"
                 pos_hint: {"center_x": .5}
 
-            MDLabel:
-                id: search_alert
-                text:""
-                bold: True
-                halign : "center"
-                pos_hint: {"center_x": .5}
+        MDLabel:
+            id: search_alert
+            text:""
+            bold: True
+            halign : "center"
+            pos_hint: {"center_x": .5}
 
         MDRaisedButton:
             id: search_button
@@ -238,6 +239,14 @@ WindowManager:
             id: result_layout
             orientation: "vertical"
             adaptive_height: True
+            spacing: 20
+
+        MDLabel:
+            id: result_alert
+            text:""
+            bold: True
+            halign : "center"
+            pos_hint: {"center_x": .5}
 
         MDRaisedButton:
             id: confirm_button
@@ -266,6 +275,14 @@ WindowManager:
             id: send_layout
             orientation: "vertical"
             adaptive_height: True
+            spacing: 20
+
+        MDLabel:
+            id: send_alert
+            text:""
+            bold: True
+            halign : "center"
+            pos_hint: {"center_x": .5}
 
         MDRaisedButton:
             id: send_button
@@ -287,3 +304,27 @@ WindowManager:
 
     MDBoxLayout:
         orientation: "vertical"
+        adaptive_height: True
+        spacing: 20
+        padding: 20
+
+        MDBoxLayout:
+            id: history_layout
+            orientation: "vertical"
+            adaptive_height: True
+            spacing: 20
+
+        MDLabel:
+            id: history_alert
+            text:""
+            bold: True
+            halign : "center"
+            pos_hint: {"center_x": .5}
+
+        MDRaisedButton:
+            id: print_button
+            text: "Imprimir"
+            text_color: 1,1,1,1
+            size_hint: .5, 1
+            pos_hint: {"center_x": .5}
+            on_release: app.call_print()
