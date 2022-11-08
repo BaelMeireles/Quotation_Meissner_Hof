@@ -58,8 +58,9 @@ class QuotationApp(MDApp):
     con = sqlite3.connect("quotation.db")
     cur = con.cursor()
     cur.execute("""CREATE TABLE if not exists users_info (
-                                                        user_name TEXT,
-                                                        user_password TEXT)""")
+                                                        user_number TEXT,
+                                                        user_password TEXT,
+                                                        user_name TEXT)""")
     cur.execute("""CREATE TABLE if not exists history_info (
                                                         quotation_date TEXT,
                                                         quotation_user TEXT,
@@ -70,7 +71,8 @@ class QuotationApp(MDApp):
     admin_check = cur.execute("SELECT user_name FROM users_info WHERE user_name='ADMINISTRADOR'")
 
     if admin_check.fetchone() is None:
-        cur.execute("INSERT INTO users_info (user_name, user_password) VALUES ('ADMINISTRADOR', '91166863')")
+        cur.execute("""INSERT INTO users_info (user_number, user_password, user_name)
+                                        VALUES ('0', '91166863', 'ADMINISTRADOR')""")
         con.commit()
 
     pull_users = cur.execute("SELECT * FROM users_info")
@@ -79,7 +81,8 @@ class QuotationApp(MDApp):
     users_info = {}
 
     for user in pull_users:
-        users_info[user[0]] = user[1]
+        pass_and_name = {"password": user[1], "name": user[2]}
+        users_info[user[0]] = pass_and_name
 
     def call_login(self):
         if self.root.current == "history":
