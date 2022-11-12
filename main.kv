@@ -5,6 +5,99 @@ WindowManager:
     SendScreen:
     HistoryScreen:
 
+<AdminLoginDialog>
+    orientation: "vertical"
+    spacing: 40
+    adaptive_height: True
+
+    MDLabel:
+        text: "Permissão de Acesso"
+        bold: True
+        halign: "center"
+        font_size: 18
+
+    MDLabel:
+        text: "Entre como ADMINISTRADOR"
+        halign: "center"
+        font_size: 14
+
+    MDTextFieldRect:
+        id: admin_check_password
+        password: True
+        multiline: False
+        halign: "center"
+        hint_text: "Senha"
+        size_hint: 1, None
+        height: "30dp"
+        pos_hint: {"center_x": .5, "center_y": .9}
+        on_focus: app.hide_alert()
+        on_text_validate: app.on_input_validate("admin_check_password")
+
+    MDLabel:
+        id: dialog_admin_check_alert
+        text:""
+        font_size: 14
+        bold: True
+        halign : "center"
+        pos_hint: {"center_x": .5}
+
+<UserRegisterDialog>
+    orientation: "vertical"
+    spacing: 20
+    adaptive_height: True
+
+    MDLabel:
+        text: "Novo Usuário"
+        bold: True
+        halign: "center"
+        font_size: 18
+
+    MDGridLayout:
+        cols: 2
+        spacing: 20
+        adaptive_height: True
+
+        MDTextFieldRect:
+            id: new_user_number_field
+            multiline: False
+            halign: "center"
+            input_filter: "int"
+            hint_text: "Nº"
+            size_hint: .2, None
+            height: "30dp"
+            on_focus: app.hide_alert()
+            on_text_validate: app.on_input_validate("new_user_number_field")
+
+        MDTextFieldRect:
+            id: new_user_name_field
+            multiline: False
+            halign: "center"
+            hint_text: "Nome"
+            size_hint: .8, None
+            height: "30dp"
+            on_focus: app.hide_alert()
+            on_text_validate: app.on_input_validate("new_user_name_field")
+
+    MDTextFieldRect:
+        id: new_user_password_field
+        password: True
+        multiline: False
+        halign: "center"
+        hint_text: "Senha"
+        size_hint: 1, None
+        height: "30dp"
+        pos_hint: {"center_x": .5, "center_y": .9}
+        on_focus: app.hide_alert()
+        on_text_validate: app.on_input_validate("new_user_password_field")
+
+    MDLabel:
+        id: dialog_new_user_alert
+        text:""
+        font_size: 14
+        bold: True
+        halign : "center"
+        pos_hint: {"center_x": .5}
+
 <LoginScreen>
     name:"login"
 
@@ -46,8 +139,11 @@ WindowManager:
                 halign: "center"
                 input_filter: "int"
                 hint_text: "Nº"
-                size_hint: .3, None
+                size_hint: .2, None
                 height: "30dp"
+                on_text: app.user_on_type()
+                on_focus: app.hide_alert()
+                on_text_validate: app.on_input_validate("user_number_field")
 
             MDTextFieldRect:
                 id: user_name_field
@@ -55,11 +151,10 @@ WindowManager:
                 multiline: False
                 halign: "center"
                 hint_text: "Nome"
-                size_hint: .7, None
+                size_hint: .8, None
                 height: "30dp"
 
         MDBoxLayout:
-            adaptive_height: True
             spacing: 20
             orientation: "vertical"
 
@@ -72,6 +167,8 @@ WindowManager:
                 size_hint: 1, None
                 height: "30dp"
                 pos_hint: {"center_x": .5, "center_y": .9}
+                on_focus: app.hide_alert()
+                on_text_validate: app.on_input_validate("user_password_field")
 
             MDRaisedButton:
                 id: login_button
@@ -79,22 +176,22 @@ WindowManager:
                 text_color: 1,1,1,1
                 size_hint: 1, 1
                 pos_hint: {"center_x": .5}
-                on_release: app.call_search()
+                on_release: app.login()
 
             MDTextButton:
                 id: register_user_button
                 text: "Cadastrar Usuário"
                 color: app.theme_cls.primary_color
                 pos_hint: {"center_x": .5}
-                on_release: app.register()
+                on_release:
+                    app.hide_alert()
+                    app.register()
 
             MDLabel:
                 id: login_alert
                 text: ""
                 bold: True
                 halign: "center"
-                size_hint: 1, None
-                height: "30dp"
                 pos_hint: {"center_x": .5}
 
     MDBoxLayout:
@@ -135,7 +232,9 @@ WindowManager:
                 text: "[b]Período[/b]"
                 size_hint: 1, 1
                 pos_hint: {"center_x": .5}
-                on_release: app.show_date_picker()
+                on_release:
+                    app.hide_alert()
+                    app.show_date_picker()
 
             MDRectangleFlatButton:
                 id: adults_menu
@@ -145,7 +244,9 @@ WindowManager:
                 text_color: app.theme_cls.accent_color
                 size_hint: 1, 1
                 pos_hint: {"center_x": .5}
-                on_release: app.adults_menu.open()
+                on_release:
+                    app.hide_alert()
+                    app.adults_menu.open()
 
             MDGridLayout:
                 cols: 2
@@ -160,7 +261,9 @@ WindowManager:
                     text_color: app.theme_cls.accent_color
                     size_hint: 1, 1
                     pos_hint: {"center_x": .5}
-                    on_release: app.children_menu.open()
+                    on_release:
+                        app.hide_alert()
+                        app.children_menu.open()
 
                 MDRectangleFlatButton:
                     id: child1_menu
@@ -171,7 +274,9 @@ WindowManager:
                     text_color: app.theme_cls.accent_color
                     size_hint: 1, 1
                     pos_hint: {"center_x": .5}
-                    on_release: app.child1_menu.open()
+                    on_release:
+                        app.hide_alert()
+                        app.child1_menu.open()
 
                 MDRectangleFlatButton:
                     id: child2_menu
@@ -182,7 +287,9 @@ WindowManager:
                     text_color: app.theme_cls.accent_color
                     size_hint: 1, 1
                     pos_hint: {"center_x": .5}
-                    on_release: app.child2_menu.open()
+                    on_release:
+                        app.hide_alert()
+                        app.child2_menu.open()
 
                 MDRectangleFlatButton:
                     id: child3_menu
@@ -193,16 +300,19 @@ WindowManager:
                     text_color: app.theme_cls.accent_color
                     size_hint: 1, 1
                     pos_hint: {"center_x": .5}
-                    on_release: app.child3_menu.open()
+                    on_release:
+                        app.hide_alert()
+                        app.child3_menu.open()
 
             MDTextFieldRect:
                 id: promo_field
                 multiline: False
                 halign: "center"
-                hint_text: "Promoção"
+                hint_text: "Promoção (opcional)"
                 size_hint: 1, None
                 height: "30dp"
                 pos_hint: {"center_x": .5}
+                on_focus: app.hide_alert()
 
         MDLabel:
             id: search_alert
@@ -217,7 +327,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release: app.call_result()
+            on_release: app.gather_info()
 
 <ResultScreen>
     name: "result"
