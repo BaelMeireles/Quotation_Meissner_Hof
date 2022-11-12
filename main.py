@@ -4,6 +4,8 @@ Config.set('graphics', 'resizable', 0)
 
 import datetime
 import sqlite3
+import bs4 as BeautifulSoup
+import requests
 from kivy.lang import Builder
 from kivy.core.window import Window
 # from kivy.metrics import dp
@@ -57,6 +59,16 @@ class QuotationApp(MDApp):
     child3 = None
     promo = None
     url = None
+
+    apaq = None
+    apca = None
+    apco = None
+    apla = None
+    apma = None
+    chfa = None
+    chhi = None
+    chla = None
+    chme = None
 
     active_user = None
 
