@@ -8,7 +8,7 @@ import bs4 as BeautifulSoup
 import requests
 from kivy.lang import Builder
 from kivy.core.window import Window
-# from kivy.metrics import dp
+#from kivy.metrics import dp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.app import MDApp
