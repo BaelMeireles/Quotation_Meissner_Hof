@@ -4,11 +4,13 @@ Config.set('graphics', 'resizable', 0)
 
 import datetime
 import sqlite3
-import bs4 as BeautifulSoup
-import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from kivy.lang import Builder
 from kivy.core.window import Window
-#from kivy.metrics import dp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.app import MDApp
@@ -58,17 +60,6 @@ class QuotationApp(MDApp):
     child2 = None
     child3 = None
     promo = None
-    url = None
-
-    apaq = None
-    apca = None
-    apco = None
-    apla = None
-    apma = None
-    chfa = None
-    chhi = None
-    chla = None
-    chme = None
 
     active_user = None
 
@@ -502,6 +493,12 @@ class QuotationApp(MDApp):
             self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
             self.root.get_screen("search").ids.search_alert.text = "Defina o Número de Adultos!"
 
+        elif self.root.get_screen("search").ids.adults_menu.text == "[b]1 Adulto[/b]" and \
+                self.root.get_screen("search").ids.children_menu.text == "[b]Crianças:[/b]":
+            self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
+            self.root.get_screen(
+                "search").ids.search_alert.text = "Você definiu apenas 1 adulto.\nDefina também pelo menos 1 criança!"
+
         else:
 
             self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
@@ -551,7 +548,32 @@ class QuotationApp(MDApp):
             else:
                 self.promo = ""
 
-            self.url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
+            url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
+
+            options = Options()
+            options.add_argument('--headless')
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            browser.get(url)
+            soup = BeautifulSoup(browser.page_source, "html.parser")
+            rooms = soup.find_all("div", {"class": "room-item"})
+            available = []
+            for room in rooms:
+                divs = room.find_all("div", {"class": None})
+                _div = []
+                for div in divs:
+                    if div["style"]:
+                        _div.append(div["style"])
+                if _div[2][0:-1] == "display: none":
+                    room_name = room.find("span", {"class": "room-name"}).text
+                    room_breakfast = room.find_all("span", {"class": "item-value primary-color"})[0].text
+                    try:
+                        room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text
+                    except:
+                        room_halfboard = "INDISPONÍVEL PARA O PERÍODO"
+                    available.append([room_name, room_breakfast, room_halfboard])
+                    print(
+                        f"{room_name}\nTarifa com café da manhã: {room_breakfast}\nTarifa com meia pensão (café da manhã e jantar): {room_halfboard}\n")
+            print(f"\n\n\n{available}")
 
     def call_result(self):
         if self.root.current == "search":
