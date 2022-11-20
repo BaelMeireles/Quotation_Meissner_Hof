@@ -3,6 +3,7 @@ from kivy.config import Config
 Config.set('graphics', 'resizable', 0)
 
 import datetime
+import threading
 import sqlite3
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -72,6 +73,9 @@ class QuotationApp(MDApp):
     child2_menu = None
     child3_menu = None
 
+    can_search = True
+    available = []
+
     con = sqlite3.connect("quotation.db")
     cur = con.cursor()
     cur.execute("""CREATE TABLE if not exists users_info (
@@ -83,7 +87,19 @@ class QuotationApp(MDApp):
                                                         quotation_user TEXT,
                                                         quotation_number TEXT,
                                                         quotation_values TEXT)""")
+    cur.execute("""CREATE TABLE if not exists drafts (draft TEXT)""")
     con.commit()
+
+    drafts_check = cur.execute(
+        "SELECT draft FROM drafts WHERE draft='Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.'")
+
+    if drafts_check.fetchone() is None:
+        cur.execute(
+            """INSERT INTO drafts VALUES ('Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.')""")
+        con.commit()
+        cur.execute(
+            """INSERT INTO drafts VALUES ('O Hotel Meissner Hof está localizado a 900 metros do centro de Monte Verde, em Minas Gerais. Rodeado por uma natureza exuberante, o Hotel está situado em um extenso jardim de 30 mil metros quadrados, com lindos bosques de Araucárias e Hortênsias, o que torna sua experiência muito aconchegante e inesquecível.')""")
+        con.commit()
 
     admin_check = cur.execute("SELECT user_name FROM users_info WHERE user_name='ADMINISTRADOR'")
 
@@ -103,18 +119,19 @@ class QuotationApp(MDApp):
         users_info[user[0]] = {"password": user[1], "name": user[2]}
 
     def call_login(self):
-        if self.root.current == "history":
-            self.root.get_screen("history").ids.history_alert.color = 0, 1, 0, 1
-            self.root.get_screen("history").ids.history_alert.text = "Carregando..."
-        else:
-            self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
-            self.root.get_screen("search").ids.search_alert.text = "Carregando..."
+        if self.can_search:
+            if self.root.current == "history":
+                self.root.get_screen("history").ids.history_alert.color = 0, 1, 0, 1
+                self.root.get_screen("history").ids.history_alert.text = "Carregando..."
+            else:
+                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Carregando..."
 
-        self.root.get_screen("login").ids.login_alert.text = ""
+            self.root.get_screen("login").ids.login_alert.text = ""
 
-        self.root.transition.direction = "left" if self.root.current == "history" else "right"
-        self.root.transition.duration = .05
-        self.root.current = "login"
+            self.root.transition.direction = "left" if self.root.current == "history" else "right"
+            self.root.transition.duration = .05
+            self.root.current = "login"
 
     def on_input_validate(self, wid):
         if self.root.current == "login":
@@ -143,26 +160,27 @@ class QuotationApp(MDApp):
                 self.root.get_screen("login").ids.user_name_field.text = "Nome"
 
     def hide_alert(self):
-        if self.root.current == "login":
-            if self.dialog is None:
-                self.root.get_screen("login").ids.login_alert.text = ""
-            else:
-                try:
-                    self.dialog.content_cls.ids.dialog_admin_check_alert.text = ""
-                except:
-                    pass
-                try:
-                    self.dialog.content_cls.ids.dialog_new_user_alert.text = ""
-                except:
-                    pass
-        if self.root.current == "search":
-            self.root.get_screen("search").ids.search_alert.text = ""
-        if self.root.current == "result":
-            self.root.get_screen("result").ids.result_alert.text = ""
-        if self.root.current == "send":
-            self.root.get_screen("send").ids.send_alert.text = ""
-        if self.root.current == "history":
-            self.root.get_screen("history").ids.history_alert.text = ""
+        if self.can_search:
+            if self.root.current == "login":
+                if self.dialog is None:
+                    self.root.get_screen("login").ids.login_alert.text = ""
+                else:
+                    try:
+                        self.dialog.content_cls.ids.dialog_admin_check_alert.text = ""
+                    except:
+                        pass
+                    try:
+                        self.dialog.content_cls.ids.dialog_new_user_alert.text = ""
+                    except:
+                        pass
+            if self.root.current == "search":
+                self.root.get_screen("search").ids.search_alert.text = ""
+            if self.root.current == "result":
+                self.root.get_screen("result").ids.result_alert.text = ""
+            if self.root.current == "send":
+                self.root.get_screen("send").ids.send_alert.text = ""
+            if self.root.current == "history":
+                self.root.get_screen("history").ids.history_alert.text = ""
 
     def login(self):
         if self.root.get_screen("login").ids.user_number_field.text == "":
@@ -388,6 +406,7 @@ class QuotationApp(MDApp):
         self.root.current = "search"
 
     def show_date_picker(self):
+
         date_dialog = MDDatePicker(elevation=50, shadow_color=self.theme_cls.accent_color,
                                    overlay_color=(0, 0, 0, 0), _scale_x=.82, _scale_y=1, text_button_color="black",
                                    title="PERÍODO:", title_input="PERÍODO:",
@@ -398,14 +417,16 @@ class QuotationApp(MDApp):
                                        datetime.date.today().month,
                                        datetime.date.today().day + 1),
                                    )
-
         date_dialog.bind(on_save=self.get_date, on_cancel=self.cancel_date)
         date_dialog.open()
 
     def get_date(self, instance, value, date_range):
-        self.period = date_range
-        self.root.get_screen("search").ids.period_button.text = \
-            f"[b]{self.period[0].strftime('%d/%m')} à {self.period[-1].strftime('%d/%m')}[/b]"
+        try:
+            self.period = date_range
+            self.root.get_screen("search").ids.period_button.text = \
+                f"[b]{self.period[0].strftime('%d/%m')} à {self.period[-1].strftime('%d/%m')}[/b]"
+        except:
+            self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
 
     def cancel_date(self, instance, value):
         pass
@@ -483,27 +504,33 @@ class QuotationApp(MDApp):
         self.root.get_screen("search").ids.child3_menu.text = f"[b]{item}[/b]"
         self.child3_menu.dismiss()
 
+    def pre_gather_info(self):
+        if self.can_search:
+            if self.root.get_screen("search").ids.period_button.text == "[b]Período[/b]":
+                self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Defina o Período!"
+
+            elif self.root.get_screen("search").ids.adults_menu.text == "[b]Adultos[/b]":
+                self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Defina o Número de Adultos!"
+
+            elif self.root.get_screen("search").ids.adults_menu.text == "[b]1 Adulto[/b]" and \
+                    self.root.get_screen("search").ids.children_menu.text == "[b]Crianças:[/b]":
+                self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
+                self.root.get_screen(
+                    "search").ids.search_alert.text = "Você definiu apenas 1 adulto.\nDefina também pelo menos 1 criança!"
+
+            else:
+
+                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Carregando..."
+
+                self.can_search = False
+                threading.Timer(1, self.gather_info).start()
+
     def gather_info(self):
 
-        if self.root.get_screen("search").ids.period_button.text == "[b]Período[/b]":
-            self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
-            self.root.get_screen("search").ids.search_alert.text = "Defina o Período!"
-
-        elif self.root.get_screen("search").ids.adults_menu.text == "[b]Adultos[/b]":
-            self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
-            self.root.get_screen("search").ids.search_alert.text = "Defina o Número de Adultos!"
-
-        elif self.root.get_screen("search").ids.adults_menu.text == "[b]1 Adulto[/b]" and \
-                self.root.get_screen("search").ids.children_menu.text == "[b]Crianças:[/b]":
-            self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
-            self.root.get_screen(
-                "search").ids.search_alert.text = "Você definiu apenas 1 adulto.\nDefina também pelo menos 1 criança!"
-
-        else:
-
-            self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
-            self.root.get_screen("search").ids.search_alert.text = "Carregando..."
-
+        try:
             self.period = f"&checkin={self.period[0].strftime('%d/%m/%Y')}&checkout={self.period[-1].strftime('%d/%m/%Y')}"
 
             self.adults = f"&adults={self.root.get_screen('search').ids.adults_menu.text[3]}"
@@ -556,7 +583,7 @@ class QuotationApp(MDApp):
             browser.get(url)
             soup = BeautifulSoup(browser.page_source, "html.parser")
             rooms = soup.find_all("div", {"class": "room-item"})
-            available = []
+            self.available = []
             for room in rooms:
                 divs = room.find_all("div", {"class": None})
                 _div = []
@@ -570,10 +597,31 @@ class QuotationApp(MDApp):
                         room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text
                     except:
                         room_halfboard = "INDISPONÍVEL PARA O PERÍODO"
-                    available.append([room_name, room_breakfast, room_halfboard])
-                    print(
-                        f"{room_name}\nTarifa com café da manhã: {room_breakfast}\nTarifa com meia pensão (café da manhã e jantar): {room_halfboard}\n")
-            print(f"\n\n\n{available}")
+                    self.available.append([room_name, room_breakfast, room_halfboard])
+            if len(self.available) > 0:
+                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Pronto!"
+                if self.available[0][2] == "INDISPONÍVEL PARA O PERÍODO":
+                    self.halfboard_calculate_dialog()
+                else:
+                    self.prepare_result()
+            else:
+                self.root.get_screen("search").ids.search_alert.color = 0, 0, 0, 1
+                self.root.get_screen("search").ids.search_alert.text = "Nenhuma acomodação disponível."
+            self.can_search = True
+        except:
+            self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
+            self.root.get_screen("search").ids.search_alert.text = "Erro de conexão!"
+            self.can_search = True
+
+    def halfboard_calculate_dialog(self):
+        pass
+
+    def halfboard_calculate(self):
+        pass
+
+    def prepare_result(self):
+        pass
 
     def call_result(self):
         if self.root.current == "search":

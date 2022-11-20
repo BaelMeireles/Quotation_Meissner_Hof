@@ -234,7 +234,7 @@ WindowManager:
                 pos_hint: {"center_x": .5}
                 on_release:
                     app.hide_alert()
-                    app.show_date_picker()
+                    if app.can_search: app.show_date_picker()
 
             MDRectangleFlatButton:
                 id: adults_menu
@@ -246,7 +246,7 @@ WindowManager:
                 pos_hint: {"center_x": .5}
                 on_release:
                     app.hide_alert()
-                    app.adults_menu.open()
+                    if app.can_search: app.adults_menu.open()
 
             MDGridLayout:
                 cols: 2
@@ -263,7 +263,7 @@ WindowManager:
                     pos_hint: {"center_x": .5}
                     on_release:
                         app.hide_alert()
-                        app.children_menu.open()
+                        if app.can_search: app.children_menu.open()
 
                 MDRectangleFlatButton:
                     id: child1_menu
@@ -276,7 +276,7 @@ WindowManager:
                     pos_hint: {"center_x": .5}
                     on_release:
                         app.hide_alert()
-                        app.child1_menu.open()
+                        if app.can_search: app.child1_menu.open()
 
                 MDRectangleFlatButton:
                     id: child2_menu
@@ -289,7 +289,7 @@ WindowManager:
                     pos_hint: {"center_x": .5}
                     on_release:
                         app.hide_alert()
-                        app.child2_menu.open()
+                        if app.can_search: app.child2_menu.open()
 
                 MDRectangleFlatButton:
                     id: child3_menu
@@ -302,7 +302,7 @@ WindowManager:
                     pos_hint: {"center_x": .5}
                     on_release:
                         app.hide_alert()
-                        app.child3_menu.open()
+                        if app.can_search: app.child3_menu.open()
 
             MDTextFieldRect:
                 id: promo_field
@@ -327,7 +327,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release: app.gather_info()
+            on_release: app.pre_gather_info()
 
 <ResultScreen>
     name: "result"
