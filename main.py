@@ -4,8 +4,10 @@ Config.set('graphics', 'resizable', 0)
 
 import datetime
 import threading
+from kivy.clock import mainthread
 import sqlite3
 from bs4 import BeautifulSoup
+from urllib.error import HTTPError, URLError
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -26,6 +28,14 @@ class AdminLoginDialog(MDBoxLayout):
 
 
 class UserRegisterDialog(MDBoxLayout):
+    pass
+
+
+class HalfboardCalculateDialog(MDBoxLayout):
+    pass
+
+
+class HalfboardCalculateDialog2(MDBoxLayout):
     pass
 
 
@@ -609,18 +619,64 @@ class QuotationApp(MDApp):
                 self.root.get_screen("search").ids.search_alert.color = 0, 0, 0, 1
                 self.root.get_screen("search").ids.search_alert.text = "Nenhuma acomodação disponível."
             self.can_search = True
-        except:
+        except (HTTPError,URLError):
             self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
             self.root.get_screen("search").ids.search_alert.text = "Erro de conexão!"
             self.can_search = True
 
+    @mainthread
     def halfboard_calculate_dialog(self):
+        self.dialog = MDDialog(
+            type="custom",
+            content_cls=HalfboardCalculateDialog(),
+            radius=[24, 0, 24, 0],
+            buttons=[
+                MDFlatButton(
+                    text="NÃO",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.halfboard_calculate_dialog2
+                ),
+                MDFlatButton(
+                    text="SIM",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.halfboard_calculate
+                ),
+            ],
+        )
+        self.dialog.open()
+
+    @mainthread
+    def halfboard_calculate_dialog2(self, *args):
+        self.dialog = MDDialog(
+            type="custom",
+            content_cls=HalfboardCalculateDialog2(),
+            radius=[24, 0, 24, 0],
+            buttons=[
+                MDFlatButton(
+                    text="NÃO",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.halfboard_remove
+                ),
+                MDFlatButton(
+                    text="SIM",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.prepare_result
+                ),
+            ],
+        )
+        self.dialog.open()
+
+    def halfboard_remove(self, *args):
         pass
 
-    def halfboard_calculate(self):
+    def halfboard_calculate(self, *args):
         pass
 
-    def prepare_result(self):
+    def prepare_result(self, *args):
         pass
 
     def call_result(self):
