@@ -65,6 +65,7 @@ class WindowManager(ScreenManager):
 
 class QuotationApp(MDApp):
     period = None
+    period_ = None
     adults = None
     children = None
     child1 = None
@@ -421,11 +422,6 @@ class QuotationApp(MDApp):
                                    overlay_color=(0, 0, 0, 0), _scale_x=.82, _scale_y=1, text_button_color="black",
                                    title="PERÍODO:", title_input="PERÍODO:",
                                    mode="range", min_year=2022, max_year=2024,
-                                   min_date=datetime.date.today(),
-                                   max_date=datetime.date(
-                                       datetime.date.today().year,
-                                       datetime.date.today().month,
-                                       datetime.date.today().day + 1),
                                    )
         date_dialog.bind(on_save=self.get_date, on_cancel=self.cancel_date)
         date_dialog.open()
@@ -539,9 +535,8 @@ class QuotationApp(MDApp):
                 threading.Timer(1, self.gather_info).start()
 
     def gather_info(self):
-
         try:
-            self.period = f"&checkin={self.period[0].strftime('%d/%m/%Y')}&checkout={self.period[-1].strftime('%d/%m/%Y')}"
+            self.period_ = f"&checkin={self.period[0].strftime('%d/%m/%Y')}&checkout={self.period[-1].strftime('%d/%m/%Y')}"
 
             self.adults = f"&adults={self.root.get_screen('search').ids.adults_menu.text[3]}"
 
@@ -585,7 +580,7 @@ class QuotationApp(MDApp):
             else:
                 self.promo = ""
 
-            url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
+            url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period_}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
 
             options = Options()
             options.add_argument('--headless')
@@ -602,9 +597,9 @@ class QuotationApp(MDApp):
                         _div.append(div["style"])
                 if _div[2][0:-1] == "display: none":
                     room_name = room.find("span", {"class": "room-name"}).text
-                    room_breakfast = room.find_all("span", {"class": "item-value primary-color"})[0].text
+                    room_breakfast = room.find_all("span", {"class": "item-value primary-color"})[0].text.replace("\xa0", " ")
                     try:
-                        room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text
+                        room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text.replace("\xa0", " ")
                     except:
                         room_halfboard = "INDISPONÍVEL PARA O PERÍODO"
                     self.available.append([room_name, room_breakfast, room_halfboard])
@@ -627,7 +622,10 @@ class QuotationApp(MDApp):
     @mainthread
     def halfboard_calculate_dialog(self):
         self.dialog = MDDialog(
+            height=20,
             type="custom",
+            auto_dismiss=False,
+            title="Meia Pensão",
             content_cls=HalfboardCalculateDialog(),
             radius=[24, 0, 24, 0],
             buttons=[
@@ -649,8 +647,11 @@ class QuotationApp(MDApp):
 
     @mainthread
     def halfboard_calculate_dialog2(self, *args):
+        self.dialog_dismiss("Close")
         self.dialog = MDDialog(
             type="custom",
+            auto_dismiss=False,
+            title="Calcular Automaticamente",
             content_cls=HalfboardCalculateDialog2(),
             radius=[24, 0, 24, 0],
             buttons=[
@@ -671,10 +672,33 @@ class QuotationApp(MDApp):
         self.dialog.open()
 
     def halfboard_remove(self, *args):
-        pass
+        self.dialog_dismiss("Close")
+        for room in self.available:
+            del room[-1]
+        self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Removida"
 
     def halfboard_calculate(self, *args):
-        pass
+        self.dialog_dismiss("Close")
+        n_person = float(self.adults[-1]) + float(self.children[-1]) if self.children != "" else float(self.adults[-1])
+        n_days = (self.period[-1] - self.period[0]).days
+        halfboard = 80.00 * (n_person * n_days)
+        for room in self.available:
+            old = ""
+            for char in room[1]:
+                if char.isnumeric() or char == ",": old += char
+            old = old.replace(",", ".")
+            new = float(old) + float(halfboard)
+            room[2] = f"R$ {format(new, '.2f')}"
+            room[2] = room[2].replace(".", ",")
+            if len(room[2]) == 12:
+                room[2] = room[2][:6] + "." + room[2][-6:]
+            if len(room[2]) == 11:
+               room[2] = room[2][:5] + "." + room[2][-6:]
+            if len(room[2]) == 10:
+                room[2] = room[2][:4] + "." + room[2][-6:]
+            print(f"Old: {old}\nNew: {new}\n{room}")
+        print(self.available)
+        self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Incluída"
 
     def prepare_result(self, *args):
         pass
