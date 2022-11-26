@@ -2,7 +2,6 @@ from kivy.config import Config
 
 Config.set('graphics', 'resizable', 0)
 
-import datetime
 import threading
 from kivy.clock import mainthread
 import sqlite3
@@ -21,6 +20,7 @@ from kivymd.uix.pickers import MDDatePicker
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.card import MDCard
 
 
 class AdminLoginDialog(MDBoxLayout):
@@ -36,6 +36,10 @@ class HalfboardCalculateDialog(MDBoxLayout):
 
 
 class HalfboardCalculateDialog2(MDBoxLayout):
+    pass
+
+
+class MessageCard(MDCard):
     pass
 
 
@@ -86,6 +90,7 @@ class QuotationApp(MDApp):
 
     can_search = True
     available = []
+    messages = []
 
     con = sqlite3.connect("quotation.db")
     cur = con.cursor()
@@ -597,9 +602,11 @@ class QuotationApp(MDApp):
                         _div.append(div["style"])
                 if _div[2][0:-1] == "display: none":
                     room_name = room.find("span", {"class": "room-name"}).text
-                    room_breakfast = room.find_all("span", {"class": "item-value primary-color"})[0].text.replace("\xa0", " ")
+                    room_breakfast = room.find_all("span", {"class": "item-value primary-color"})[0].text.replace(
+                        "\xa0", " ")
                     try:
-                        room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text.replace("\xa0", " ")
+                        room_halfboard = room.find_all("span", {"class": "item-value primary-color"})[1].text.replace(
+                            "\xa0", " ")
                     except:
                         room_halfboard = "INDISPONÍVEL PARA O PERÍODO"
                     self.available.append([room_name, room_breakfast, room_halfboard])
@@ -614,7 +621,7 @@ class QuotationApp(MDApp):
                 self.root.get_screen("search").ids.search_alert.color = 0, 0, 0, 1
                 self.root.get_screen("search").ids.search_alert.text = "Nenhuma acomodação disponível."
             self.can_search = True
-        except (HTTPError,URLError):
+        except (HTTPError, URLError):
             self.root.get_screen("search").ids.search_alert.color = 1, 0, 0, 1
             self.root.get_screen("search").ids.search_alert.text = "Erro de conexão!"
             self.can_search = True
@@ -693,18 +700,33 @@ class QuotationApp(MDApp):
             if len(room[2]) == 12:
                 room[2] = room[2][:6] + "." + room[2][-6:]
             if len(room[2]) == 11:
-               room[2] = room[2][:5] + "." + room[2][-6:]
+                room[2] = room[2][:5] + "." + room[2][-6:]
             if len(room[2]) == 10:
                 room[2] = room[2][:4] + "." + room[2][-6:]
         self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Incluída"
 
     def prepare_result(self, *args):
+
+        self.messages = [f"Para o período de {self.period[0].strftime('%d/%m')} à {self.period[-1].strftime('%d/%m')} temos disponíveis as seguintes acomodações:"]
+
         for room in self.available:
-            info = ""
-            if len(room) == 2:
-                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}"
-            else:
-                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}\nTarifa com meia pensão (café da manhã e jantar): {room[2]}"
+            self.messages.append(room)
+
+        self.messages.append("Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.")
+
+        for message in self.messages:
+            if len(message) == 2 or len(message) == 3:
+                info = ""
+                if len(message) == 2:
+                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}"
+                elif len(message) == 3:
+                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}\nTarifa com meia pensão (café da manhã e jantar): {message[2]}"
+
+    def remove_message(self, instance):
+        self.root.get_screen("result").ids.result_layout.remove_widget(instance)
+
+    def add_message(self, instance):
+        pass
 
     def call_result(self):
         if self.root.current == "search":

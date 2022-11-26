@@ -5,6 +5,30 @@ WindowManager:
     SendScreen:
     HistoryScreen:
 
+<MessageCard>
+    height: content.height
+
+    MDCardSwipeLayerBox:
+        padding: "8dp"
+
+        MDIconButton:
+            icon: "plus-circle"
+            pos_hint: {"center_y": .5}
+            on_release: app.add_message(root)
+
+        MDIconButton:
+            icon: "trash-can"
+            pos_hint: {"center_y": .5}
+            on_release: app.remove_message(root)
+
+    MDCardSwipeFrontBox:
+
+        MDLabel:
+            id: root.id
+            text: root.text
+            halign = "left"
+            pos_hint: {"center_x": .5, "center_y": .5}
+
 <AdminLoginDialog>
     orientation: "vertical"
     spacing: 40
