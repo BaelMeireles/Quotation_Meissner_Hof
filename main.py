@@ -696,12 +696,15 @@ class QuotationApp(MDApp):
                room[2] = room[2][:5] + "." + room[2][-6:]
             if len(room[2]) == 10:
                 room[2] = room[2][:4] + "." + room[2][-6:]
-            print(f"Old: {old}\nNew: {new}\n{room}")
-        print(self.available)
         self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Incluída"
 
     def prepare_result(self, *args):
-        pass
+        for room in self.available:
+            info = ""
+            if len(room) == 2:
+                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}"
+            else:
+                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}\nTarifa com meia pensão (café da manhã e jantar): {room[2]}"
 
     def call_result(self):
         if self.root.current == "search":
