@@ -20,6 +20,7 @@ from kivymd.uix.pickers import MDDatePicker
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
 
 
@@ -36,6 +37,10 @@ class HalfboardCalculateDialog(MDBoxLayout):
 
 
 class HalfboardCalculateDialog2(MDBoxLayout):
+    pass
+
+
+class ResultLabel(MDLabel):
     pass
 
 
@@ -683,6 +688,7 @@ class QuotationApp(MDApp):
         for room in self.available:
             del room[-1]
         self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Removida"
+        self.prepare_result()
 
     def halfboard_calculate(self, *args):
         self.dialog_dismiss("Close")
@@ -704,29 +710,20 @@ class QuotationApp(MDApp):
             if len(room[2]) == 10:
                 room[2] = room[2][:4] + "." + room[2][-6:]
         self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Incluída"
+        self.prepare_result()
 
     def prepare_result(self, *args):
 
-        self.messages = [f"Para o período de {self.period[0].strftime('%d/%m')} à {self.period[-1].strftime('%d/%m')} temos disponíveis as seguintes acomodações:"]
-
         for room in self.available:
-            self.messages.append(room)
+            info = ""
+            if len(room) == 2:
+                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}"
+            elif len(room) == 3:
+                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}\nTarifa com meia pensão (café da manhã e jantar): {room[2]}"
 
-        self.messages.append("Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.")
+            self.root.get_screen("result").ids.result_layout.add_widget(ResultLabel(text=info))
 
-        for message in self.messages:
-            if len(message) == 2 or len(message) == 3:
-                info = ""
-                if len(message) == 2:
-                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}"
-                elif len(message) == 3:
-                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}\nTarifa com meia pensão (café da manhã e jantar): {message[2]}"
-
-    def remove_message(self, instance):
-        self.root.get_screen("result").ids.result_layout.remove_widget(instance)
-
-    def add_message(self, instance):
-        pass
+        self.call_result()
 
     def call_result(self):
         if self.root.current == "search":
@@ -740,6 +737,35 @@ class QuotationApp(MDApp):
         self.root.transition.direction = "left" if self.root.current == "search" else "right"
         self.root.transition.duration = .05
         self.root.current = "result"
+
+    def prepare_messages(self):
+
+        self.messages = [
+            f"Para o período de {self.period[0].strftime('%d/%m')} à {self.period[-1].strftime('%d/%m')} temos disponíveis as seguintes acomodações:"]
+
+        for room in self.available:
+            self.messages.append(room)
+            self.messages.append(f"[FOTOS {room[1]}]")
+
+        for i, message in enumerate(self.messages):
+            if len(message) == 2 or len(message) == 3:
+                info = ""
+                if len(message) == 2:
+                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}"
+                elif len(message) == 3:
+                    info = f"{message[0]}\nTarifa com café da manhã: {message[1]}\nTarifa com meia pensão (café da manhã e jantar): {message[2]}"
+                self.messages[i] = info
+
+        self.messages.append(
+            "Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.")
+
+        print(self.messages)
+
+    def remove_message(self, instance):
+        self.root.get_screen("send").ids.send_layout.remove_widget(instance)
+
+    def add_message(self, instance):
+        pass
 
     def call_send(self):
         self.root.get_screen("result").ids.result_alert.color = 0, 1, 0, 1

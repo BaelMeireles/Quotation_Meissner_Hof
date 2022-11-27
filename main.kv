@@ -5,7 +5,11 @@ WindowManager:
     SendScreen:
     HistoryScreen:
 
+<ResultLabel>
+    text: ""
+
 <MessageCard>
+    size_hint_y: None
     height: content.height
 
     MDCardSwipeLayerBox:
@@ -26,7 +30,7 @@ WindowManager:
         MDLabel:
             id: root.id
             text: root.text
-            halign = "left"
+            halign: "left"
             pos_hint: {"center_x": .5, "center_y": .5}
 
 <AdminLoginDialog>
@@ -391,11 +395,12 @@ WindowManager:
         spacing: 20
         padding: 20
 
-        MDBoxLayout:
-            id: result_layout
-            orientation: "vertical"
-            adaptive_height: True
-            spacing: 20
+        MDScrollView:
+            MDBoxLayout:
+                id: result_layout
+                orientation: "vertical"
+                adaptive_height: True
+                spacing: 20
 
         MDLabel:
             id: result_alert
