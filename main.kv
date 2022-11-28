@@ -6,11 +6,11 @@ WindowManager:
     HistoryScreen:
 
 <MessageCard>
-    color: app.theme_cls.primary_color
     size_hint_y: None
-    height: wid_id.height
+    height: message_label.height
 
     MDCardSwipeLayerBox:
+        padding: "8dp"
 
         MDIconButton:
             icon: "plus-circle"
@@ -25,9 +25,9 @@ WindowManager:
     MDCardSwipeFrontBox:
 
         MDLabel:
-            name: root.wid_id
+            id: message_label
             text: root.text
-            font_size: 11
+            font_size: 14
             halign: "left"
             pos_hint: {"center_x": .5, "center_y": .5}
 
@@ -391,16 +391,16 @@ WindowManager:
         orientation: "vertical"
         adaptive_height: True
         spacing: 20
-        padding: 20
+        padding: (5, 20)
 
         MDScrollView:
             size_hint_y: None
             height: 450
-            MDBoxLayout:
+            MDGridLayout:
+                cols: 2
                 id: result_layout
-                orientation: "vertical"
                 adaptive_height: True
-                spacing: 150
+                spacing: (0, 50)
 
         MDRaisedButton:
             id: confirm_button
@@ -422,19 +422,26 @@ WindowManager:
     MDBoxLayout:
         orientation: "vertical"
         adaptive_height: True
-        spacing: 20
-        padding: 20
+        spacing: 10
+        padding: (5, 20)
+
+        MDTextFieldRect:
+            id: phone_number_field
+            multiline: False
+            halign: "center"
+            hint_text: "Nº do Hóspede"
+            height: "30dp"
+            on_focus: app.hide_alert()
 
         MDScrollView:
             size_hint_y: None
-            height: 300
+            height: 400
 
             MDBoxLayout:
                 id: send_layout
-                md_bg_color: app.theme_cls.accent_color
                 orientation: "vertical"
                 adaptive_height: True
-                spacing: 20
+                spacing: 2
 
         MDLabel:
             id: send_alert

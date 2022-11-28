@@ -718,16 +718,26 @@ class QuotationApp(MDApp):
     @mainthread
     def prepare_result(self, *args):
         self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
-        for room in self.available:
-            info = ""
-            if len(room) == 2:
-                info = f"{room[0]}\n\nTarifa com café da manhã:\n{room[1]}"
-            elif len(room) == 3:
-                info = f"{room[0]}\n\nTarifa com café da manhã:\n{room[1]}\nTarifa com meia pensão:\n{room[2]}"
-
-            self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=info))
-
         self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
+
+        for room in self.available:
+            l = MDLabel(text=room[0], font_size=11, color=self.theme_cls.primary_color)
+            self.root.get_screen("result").ids.result_layout.add_widget(l)
+            self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
+
+            l = MDLabel(text="Pensão Simples:", font_size=11, color=self.theme_cls.primary_color)
+            self.root.get_screen("result").ids.result_layout.add_widget(l)
+            l = MDLabel(text=room[1], font_size=11)
+            self.root.get_screen("result").ids.result_layout.add_widget(l)
+
+            if len(room) == 3:
+                l = MDLabel(text="Meia Pensão:", font_size=11, color=self.theme_cls.primary_color)
+                self.root.get_screen("result").ids.result_layout.add_widget(l)
+                l = MDLabel(text=room[2], font_size=11)
+                self.root.get_screen("result").ids.result_layout.add_widget(l)
+
+            self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
+            self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
 
         self.call_result()
 
@@ -767,7 +777,6 @@ class QuotationApp(MDApp):
             "Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.")
 
         for i, message in enumerate(self.messages):
-            wid_id = f"message{i}"
             self.root.get_screen("send").ids.send_layout.add_widget(
                 MessageCard(text=message)
             )
