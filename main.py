@@ -21,7 +21,8 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
-from kivymd.uix.card import MDCard
+from kivymd.uix.card import MDCardSwipe
+from kivy.properties import StringProperty
 
 
 class AdminLoginDialog(MDBoxLayout):
@@ -40,12 +41,8 @@ class HalfboardCalculateDialog2(MDBoxLayout):
     pass
 
 
-class ResultLabel(MDLabel):
-    pass
-
-
-class MessageCard(MDCard):
-    pass
+class MessageCard(MDCardSwipe):
+    text = StringProperty()
 
 
 class LoginScreen(Screen):
@@ -154,6 +151,12 @@ class QuotationApp(MDApp):
             self.root.transition.duration = .05
             self.root.current = "login"
 
+            self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
+            self.set_adults("Adultos")
+            self.set_children("Crianças:")
+            self.root.get_screen("search").ids.promo_field.text = ""
+            self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
+
     def on_input_validate(self, wid):
         if self.root.current == "login":
             if wid == "user_number_field":
@@ -196,8 +199,6 @@ class QuotationApp(MDApp):
                         pass
             if self.root.current == "search":
                 self.root.get_screen("search").ids.search_alert.text = ""
-            if self.root.current == "result":
-                self.root.get_screen("result").ids.result_alert.text = ""
             if self.root.current == "send":
                 self.root.get_screen("send").ids.send_alert.text = ""
             if self.root.current == "history":
@@ -338,9 +339,8 @@ class QuotationApp(MDApp):
         if self.root.current == "login":
             self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
             self.root.get_screen("login").ids.login_alert.text = "Carregando..."
-        else:
-            self.root.get_screen("result").ids.result_alert.color = 0, 1, 0, 1
-            self.root.get_screen("result").ids.result_alert.text = "Carregando..."
+
+        self.root.get_screen("result").ids.result_layout.clear_widgets()
 
         self.root.get_screen("search").ids.search_alert.text = ""
 
@@ -449,7 +449,10 @@ class QuotationApp(MDApp):
 
     def set_adults(self, item):
         self.root.get_screen("search").ids.adults_menu.text = f"[b]{item}[/b]"
-        self.root.get_screen("search").ids.adults_menu.text_color = self.theme_cls.primary_color
+        if item == "Adultos":
+            self.root.get_screen("search").ids.adults_menu.text_color = self.theme_cls.accent_color
+        else:
+            self.root.get_screen("search").ids.adults_menu.text_color = self.theme_cls.primary_color
         self.adults_menu.dismiss()
 
     def set_children(self, item):
@@ -712,20 +715,25 @@ class QuotationApp(MDApp):
         self.root.get_screen("search").ids.search_alert.text = "Meia Pensão Incluída"
         self.prepare_result()
 
+    @mainthread
     def prepare_result(self, *args):
-
+        self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
         for room in self.available:
             info = ""
             if len(room) == 2:
-                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}"
+                info = f"{room[0]}\n\nTarifa com café da manhã:\n{room[1]}"
             elif len(room) == 3:
-                info = f"{room[0]}\nTarifa com café da manhã: {room[1]}\nTarifa com meia pensão (café da manhã e jantar): {room[2]}"
+                info = f"{room[0]}\n\nTarifa com café da manhã:\n{room[1]}\nTarifa com meia pensão:\n{room[2]}"
 
-            self.root.get_screen("result").ids.result_layout.add_widget(ResultLabel(text=info))
+            self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=info))
+
+        self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
 
         self.call_result()
 
     def call_result(self):
+        self.root.get_screen("send").ids.send_layout.clear_widgets()
+
         if self.root.current == "search":
             self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
             self.root.get_screen("search").ids.search_alert.text = "Carregando..."
@@ -733,7 +741,6 @@ class QuotationApp(MDApp):
             self.root.get_screen("send").ids.send_alert.color = 0, 1, 0, 1
             self.root.get_screen("send").ids.send_alert.text = "Carregando..."
 
-        self.root.get_screen("result").ids.result_alert.text = ""
         self.root.transition.direction = "left" if self.root.current == "search" else "right"
         self.root.transition.duration = .05
         self.root.current = "result"
@@ -745,7 +752,7 @@ class QuotationApp(MDApp):
 
         for room in self.available:
             self.messages.append(room)
-            self.messages.append(f"[FOTOS {room[1]}]")
+            self.messages.append(f"[FOTOS {room[0]}]")
 
         for i, message in enumerate(self.messages):
             if len(message) == 2 or len(message) == 3:
@@ -759,7 +766,12 @@ class QuotationApp(MDApp):
         self.messages.append(
             "Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.")
 
-        print(self.messages)
+        for i, message in enumerate(self.messages):
+            wid_id = f"message{i}"
+            self.root.get_screen("send").ids.send_layout.add_widget(
+                MessageCard(text=message)
+            )
+        self.call_send()
 
     def remove_message(self, instance):
         self.root.get_screen("send").ids.send_layout.remove_widget(instance)
@@ -768,13 +780,20 @@ class QuotationApp(MDApp):
         pass
 
     def call_send(self):
-        self.root.get_screen("result").ids.result_alert.color = 0, 1, 0, 1
-        self.root.get_screen("result").ids.result_alert.text = "Carregando..."
-
         self.root.get_screen("send").ids.send_alert.text = ""
         self.root.transition.direction = "left" if self.root.current == "result" else "right"
         self.root.transition.duration = .05
         self.root.current = "send"
+
+    def send_messages(self):
+
+        self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
+        self.set_adults("Adultos")
+        self.set_children("Crianças:")
+        self.root.get_screen("search").ids.promo_field.text = ""
+        self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
+
+        self.call_search()
 
     def call_history(self):
         self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1

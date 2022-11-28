@@ -5,15 +5,12 @@ WindowManager:
     SendScreen:
     HistoryScreen:
 
-<ResultLabel>
-    text: ""
-
 <MessageCard>
+    color: app.theme_cls.primary_color
     size_hint_y: None
-    height: content.height
+    height: wid_id.height
 
     MDCardSwipeLayerBox:
-        padding: "8dp"
 
         MDIconButton:
             icon: "plus-circle"
@@ -28,8 +25,9 @@ WindowManager:
     MDCardSwipeFrontBox:
 
         MDLabel:
-            id: root.id
+            name: root.wid_id
             text: root.text
+            font_size: 11
             halign: "left"
             pos_hint: {"center_x": .5, "center_y": .5}
 
@@ -396,18 +394,13 @@ WindowManager:
         padding: 20
 
         MDScrollView:
+            size_hint_y: None
+            height: 450
             MDBoxLayout:
                 id: result_layout
                 orientation: "vertical"
                 adaptive_height: True
-                spacing: 20
-
-        MDLabel:
-            id: result_alert
-            text:""
-            bold: True
-            halign : "center"
-            pos_hint: {"center_x": .5}
+                spacing: 150
 
         MDRaisedButton:
             id: confirm_button
@@ -415,7 +408,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release: app.call_send()
+            on_release: app.prepare_messages()
 <SendScreen>:
     name:"send"
 
@@ -432,18 +425,25 @@ WindowManager:
         spacing: 20
         padding: 20
 
-        MDBoxLayout:
-            id: send_layout
-            orientation: "vertical"
-            adaptive_height: True
-            spacing: 20
+        MDScrollView:
+            size_hint_y: None
+            height: 300
+
+            MDBoxLayout:
+                id: send_layout
+                md_bg_color: app.theme_cls.accent_color
+                orientation: "vertical"
+                adaptive_height: True
+                spacing: 20
 
         MDLabel:
             id: send_alert
-            text:""
+            text:"Teste"
             bold: True
             halign : "center"
             pos_hint: {"center_x": .5}
+            size_hint_y: None
+            height: 20
 
         MDRaisedButton:
             id: send_button
@@ -451,7 +451,7 @@ WindowManager:
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release: app.call_search()
+            on_release: app.send_messages()
 
 <HistoryScreen>:
     name:"history"
