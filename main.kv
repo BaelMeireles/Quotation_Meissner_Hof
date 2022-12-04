@@ -1,21 +1,22 @@
 WindowManager:
     LoginScreen:
     SearchScreen:
+    DraftsScreen:
     ResultScreen:
     SendScreen:
     HistoryScreen:
 
 <MessageCard>
-    size_hint_y: None
-    height: message_label.height
+    focus_behavior: True
+    adaptive_height: True
+    ripple_behavior: True
 
     MDCardSwipeLayerBox:
-        padding: "8dp"
 
         MDIconButton:
             icon: "plus-circle"
             pos_hint: {"center_y": .5}
-            on_release: app.add_message(root)
+            on_release: app.new_message_dialog(root)
 
         MDIconButton:
             icon: "trash-can"
@@ -25,7 +26,22 @@ WindowManager:
     MDCardSwipeFrontBox:
 
         MDLabel:
-            id: message_label
+            text: root.text
+            font_size: 14
+            halign: "left"
+            pos_hint: {"center_x": .5, "center_y": .5}
+
+<DraftCard>
+    focus_behavior: True
+    adaptive_height: True
+    ripple_behavior: True
+    padding: 2
+    on_release: app.copy_draft(root)
+
+    MDBoxLayout:
+        adaptive_height: True
+
+        MDLabel:
             text: root.text
             font_size: 14
             halign: "left"
@@ -61,6 +77,35 @@ WindowManager:
 
     MDLabel:
         id: dialog_admin_check_alert
+        text:""
+        font_size: 14
+        bold: True
+        halign : "center"
+        pos_hint: {"center_x": .5}
+
+<NewMessageDialog>
+    orientation: "vertical"
+    spacing: 40
+    adaptive_height: True
+
+    MDLabel:
+        text: "Nova Mensagem"
+        bold: True
+        halign: "center"
+        font_size: 18
+
+    MDTextFieldRect:
+        id: new_message_field
+        multiline: True
+        size_hint: 1, None
+        height: "120dp"
+        halign: "center"
+        pos_hint: {"center_x": .5, "center_y": .9}
+        on_focus: app.hide_alert()
+        on_text_validate: app.on_input_validate("new_message_validate")
+
+    MDLabel:
+        id: new_message_alert
         text:""
         font_size: 14
         bold: True
@@ -260,6 +305,7 @@ WindowManager:
         size_hint: (1, .09)
         elevation: 0
         left_action_items: [["arrow-left", lambda x: app.call_login()]]
+        right_action_items: [["menu", lambda x: app.call_drafts()]]
 
     MDBoxLayout:
         orientation: "vertical"
@@ -377,6 +423,51 @@ WindowManager:
             pos_hint: {"center_x": .5}
             on_release: app.pre_gather_info()
 
+<DraftsScreen>:
+    name:"drafts"
+    Image:
+        source: "images/whatsappbg.jpg"
+        size_hint: (1.5, 1.5)
+        pos_hint: {"center_x": .5, "center_y": .5}
+
+    MDTopAppBar:
+        title: "Rascunhos"
+        pos_hint:{"center_y": .97}
+        size_hint: (1, .09)
+        elevation: 0
+        left_action_items: [["arrow-down", lambda x: app.call_search()]]
+
+    MDBoxLayout:
+        orientation: "vertical"
+        adaptive_height: True
+        spacing: 50
+        padding: (10, 20)
+
+        MDScrollView:
+            size_hint_y: None
+            height: 300
+
+            MDBoxLayout:
+                id: drafts_layout
+                orientation: "vertical"
+                adaptive_height: True
+                spacing: 2
+        MDLabel:
+            id: drafts_alert
+            text:""
+            bold: True
+            halign : "center"
+            pos_hint: {"center_x": .5}
+            size_hint_y: None
+            height: 20
+        MDRaisedButton:
+            id: drafts_button
+            text: "Adicionar"
+            text_color: 1,1,1,1
+            size_hint: .5, 1
+            pos_hint: {"center_x": .5}
+            on_release: app.add_draft()
+
 <ResultScreen>
     name: "result"
 
@@ -400,7 +491,7 @@ WindowManager:
                 cols: 2
                 id: result_layout
                 adaptive_height: True
-                spacing: (0, 50)
+                spacing: (0, 35)
 
         MDRaisedButton:
             id: confirm_button
@@ -409,8 +500,13 @@ WindowManager:
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
             on_release: app.prepare_messages()
+
 <SendScreen>:
     name:"send"
+    Image:
+        source: "images/whatsappbg.jpg"
+        size_hint: (1.5, 1.5)
+        pos_hint: {"center_x": .5, "center_y": .5}
 
     MDTopAppBar:
         title: "Mensagens"
@@ -423,7 +519,7 @@ WindowManager:
         orientation: "vertical"
         adaptive_height: True
         spacing: 10
-        padding: (5, 20)
+        padding: (10, 20)
 
         MDTextFieldRect:
             id: phone_number_field
@@ -445,7 +541,7 @@ WindowManager:
 
         MDLabel:
             id: send_alert
-            text:"Teste"
+            text:""
             bold: True
             halign : "center"
             pos_hint: {"center_x": .5}

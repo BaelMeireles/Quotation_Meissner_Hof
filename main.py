@@ -22,7 +22,9 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCardSwipe
+from kivymd.uix.card import MDCard
 from kivy.properties import StringProperty
+from jaraco import clipboard
 
 
 class AdminLoginDialog(MDBoxLayout):
@@ -41,7 +43,15 @@ class HalfboardCalculateDialog2(MDBoxLayout):
     pass
 
 
+class NewMessageDialog(MDBoxLayout):
+    pass
+
+
 class MessageCard(MDCardSwipe):
+    text = StringProperty()
+
+
+class DraftCard(MDCard):
     text = StringProperty()
 
 
@@ -50,6 +60,10 @@ class LoginScreen(Screen):
 
 
 class SearchScreen(Screen):
+    pass
+
+
+class DraftsScreen(Screen):
     pass
 
 
@@ -93,6 +107,8 @@ class QuotationApp(MDApp):
     can_search = True
     available = []
     messages = []
+    new_message = ""
+    new_message_instance = None
 
     con = sqlite3.connect("quotation.db")
     cur = con.cursor()
@@ -116,6 +132,9 @@ class QuotationApp(MDApp):
             """INSERT INTO drafts VALUES ('Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.')""")
         con.commit()
         cur.execute(
+            """INSERT INTO drafts VALUES ('Estamos na Rua Travessa da Pedra nº 2, em Monte Verde (Camanducaia-MG), à 900m da avenida principal.')""")
+        con.commit()
+        cur.execute(
             """INSERT INTO drafts VALUES ('O Hotel Meissner Hof está localizado a 900 metros do centro de Monte Verde, em Minas Gerais. Rodeado por uma natureza exuberante, o Hotel está situado em um extenso jardim de 30 mil metros quadrados, com lindos bosques de Araucárias e Hortênsias, o que torna sua experiência muito aconchegante e inesquecível.')""")
         con.commit()
 
@@ -129,20 +148,27 @@ class QuotationApp(MDApp):
     pull_users = cur.execute("SELECT * FROM users_info")
     pull_users = pull_users.fetchall()
 
+    pull_drafts = cur.execute("SELECT * FROM drafts")
+    pull_drafts = pull_drafts.fetchall()
+
     con.close()
 
     users_info = {}
+    drafts = []
 
     for user in pull_users:
         users_info[user[0]] = {"password": user[1], "name": user[2]}
 
+    for draft in pull_drafts:
+        drafts.append(draft[0])
+
     def call_login(self):
         if self.can_search:
             if self.root.current == "history":
-                self.root.get_screen("history").ids.history_alert.color = 0, 1, 0, 1
+                self.root.get_screen("history").ids.history_alert.color = self.theme_cls.primary_color
                 self.root.get_screen("history").ids.history_alert.text = "Carregando..."
             else:
-                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.color = self.theme_cls.primary_color
                 self.root.get_screen("search").ids.search_alert.text = "Carregando..."
 
             self.root.get_screen("login").ids.login_alert.text = ""
@@ -172,6 +198,17 @@ class QuotationApp(MDApp):
             else:
                 self.new_user_save(wid)
 
+        if self.root.current == "send" and self.dialog is not None and self.dialog.content_cls.ids.new_message_field.text != "" and self.dialog.content_cls.ids.new_message_field.text.isspace() != True:
+            self.dialog.content_cls.ids.new_message_alert.color = self.theme_cls.primary_color
+            self.dialog.content_cls.ids.new_message_alert.text = ""
+            self.new_message = self.dialog.content_cls.ids.new_message_field.text
+            self.add_message(self.new_message_instance)
+        elif self.dialog is not None:
+            self.dialog.content_cls.ids.new_message_alert.color = 1, 0, 0, 1
+            self.dialog.content_cls.ids.new_message_alert.text = "Mensagem Inválida!"
+        else:
+            self.root.get_screen("send").ids.send_alert.text = ""
+
     def user_on_type(self):
         if self.root.current == "login":
             if self.root.get_screen("login").ids.user_number_field.text != "":
@@ -200,7 +237,13 @@ class QuotationApp(MDApp):
             if self.root.current == "search":
                 self.root.get_screen("search").ids.search_alert.text = ""
             if self.root.current == "send":
-                self.root.get_screen("send").ids.send_alert.text = ""
+                if self.dialog is None:
+                    self.root.get_screen("send").ids.send_alert.text = ""
+                else:
+                    try:
+                        self.dialog.content_cls.ids.new_message_alert.text = ""
+                    except:
+                        pass
             if self.root.current == "history":
                 self.root.get_screen("history").ids.history_alert.text = ""
 
@@ -330,14 +373,14 @@ class QuotationApp(MDApp):
             for user in pull_users:
                 self.users_info[user[0]] = {"password": user[1], "name": user[2]}
 
-            self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
+            self.root.get_screen("login").ids.login_alert.color = self.theme_cls.primary_color
             self.root.get_screen("login").ids.login_alert.text = "Usuário Cadastrado!"
 
             self.dialog_dismiss("Close")
 
     def call_search(self):
         if self.root.current == "login":
-            self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
+            self.root.get_screen("login").ids.login_alert.color = self.theme_cls.primary_color
             self.root.get_screen("login").ids.login_alert.text = "Carregando..."
 
         self.root.get_screen("result").ids.result_layout.clear_widgets()
@@ -423,6 +466,10 @@ class QuotationApp(MDApp):
         self.child3_menu.bind()
 
         self.root.transition.direction = "left" if self.root.current == "login" else "right"
+        if self.root.current == "drafts":
+            self.root.transition.direction = "down"
+            self.root.get_screen("drafts").ids.drafts_layout.clear_widgets()
+
         self.root.transition.duration = .05
         self.root.current = "search"
 
@@ -541,7 +588,7 @@ class QuotationApp(MDApp):
 
             else:
 
-                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.color = self.theme_cls.primary_color
                 self.root.get_screen("search").ids.search_alert.text = "Carregando..."
 
                 self.can_search = False
@@ -619,7 +666,7 @@ class QuotationApp(MDApp):
                         room_halfboard = "INDISPONÍVEL PARA O PERÍODO"
                     self.available.append([room_name, room_breakfast, room_halfboard])
             if len(self.available) > 0:
-                self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+                self.root.get_screen("search").ids.search_alert.color = self.theme_cls.primary_color
                 self.root.get_screen("search").ids.search_alert.text = "Pronto!"
                 if self.available[0][2] == "INDISPONÍVEL PARA O PERÍODO":
                     self.halfboard_calculate_dialog()
@@ -717,23 +764,26 @@ class QuotationApp(MDApp):
 
     @mainthread
     def prepare_result(self, *args):
+        if self.dialog is not None:
+            self.dialog_dismiss("Close")
+
         self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
         self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
 
         for room in self.available:
-            l = MDLabel(text=room[0], font_size=11, color=self.theme_cls.primary_color)
+            l = MDLabel(text=room[0])
             self.root.get_screen("result").ids.result_layout.add_widget(l)
             self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
 
-            l = MDLabel(text="Pensão Simples:", font_size=11, color=self.theme_cls.primary_color)
+            l = MDLabel(text="Pensão Simples:")
             self.root.get_screen("result").ids.result_layout.add_widget(l)
-            l = MDLabel(text=room[1], font_size=11)
+            l = MDLabel(text=room[1])
             self.root.get_screen("result").ids.result_layout.add_widget(l)
 
             if len(room) == 3:
-                l = MDLabel(text="Meia Pensão:", font_size=11, color=self.theme_cls.primary_color)
+                l = MDLabel(text="Meia Pensão:")
                 self.root.get_screen("result").ids.result_layout.add_widget(l)
-                l = MDLabel(text=room[2], font_size=11)
+                l = MDLabel(text=room[2])
                 self.root.get_screen("result").ids.result_layout.add_widget(l)
 
             self.root.get_screen("result").ids.result_layout.add_widget(MDLabel(text=""))
@@ -741,14 +791,32 @@ class QuotationApp(MDApp):
 
         self.call_result()
 
+    def call_drafts(self):
+
+        if self.can_search:
+            for draft in self.drafts:
+                self.root.get_screen("drafts").ids.drafts_layout.add_widget(
+                    DraftCard(text=draft)
+                )
+
+            self.root.transition.direction = "up"
+            self.root.transition.duration = .05
+            self.root.current = "drafts"
+
+    def add_draft(self):
+        pass
+
+    def copy_draft(self, instance):
+        pass
+
     def call_result(self):
         self.root.get_screen("send").ids.send_layout.clear_widgets()
 
         if self.root.current == "search":
-            self.root.get_screen("search").ids.search_alert.color = 0, 1, 0, 1
+            self.root.get_screen("search").ids.search_alert.color = self.theme_cls.primary_color
             self.root.get_screen("search").ids.search_alert.text = "Carregando..."
         else:
-            self.root.get_screen("send").ids.send_alert.color = 0, 1, 0, 1
+            self.root.get_screen("send").ids.send_alert.color = self.theme_cls.primary_color
             self.root.get_screen("send").ids.send_alert.text = "Carregando..."
 
         self.root.transition.direction = "left" if self.root.current == "search" else "right"
@@ -783,10 +851,57 @@ class QuotationApp(MDApp):
         self.call_send()
 
     def remove_message(self, instance):
-        self.root.get_screen("send").ids.send_layout.remove_widget(instance)
+
+        self.messages.remove(instance.text)
+        self.root.get_screen("send").ids.send_layout.clear_widgets()
+
+        for i, message in enumerate(self.messages):
+            self.root.get_screen("send").ids.send_layout.add_widget(
+                MessageCard(text=message)
+            )
+
+    def new_message_dialog(self, instance):
+        self.new_message_instance = instance
+
+        self.dialog = MDDialog(
+            type="custom",
+            content_cls=NewMessageDialog(),
+            radius=[24, 0, 24, 0],
+            buttons=[
+                MDFlatButton(
+                    text="Cancelar",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.dialog_dismiss
+                ),
+                MDFlatButton(
+                    text="Adicionar",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.on_input_validate
+                ),
+            ],
+        )
+        self.dialog.open()
 
     def add_message(self, instance):
-        pass
+
+        m = 0
+        while True:
+            if instance.text == self.messages[m]:
+                break
+            else:
+                m += 1
+
+        self.messages = self.messages[:m + 1] + [self.new_message] + self.messages[m + 1:]
+
+        self.root.get_screen("send").ids.send_layout.clear_widgets()
+
+        for i, message in enumerate(self.messages):
+            self.root.get_screen("send").ids.send_layout.add_widget(
+                MessageCard(text=message)
+            )
+        self.dialog_dismiss("whatever")
 
     def call_send(self):
         self.root.get_screen("send").ids.send_alert.text = ""
@@ -805,7 +920,7 @@ class QuotationApp(MDApp):
         self.call_search()
 
     def call_history(self):
-        self.root.get_screen("login").ids.login_alert.color = 0, 1, 0, 1
+        self.root.get_screen("login").ids.login_alert.color = self.theme_cls.primary_color
         self.root.get_screen("login").ids.login_alert.text = "Carregando..."
 
         self.root.get_screen("history").ids.history_alert.text = ""
