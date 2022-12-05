@@ -2,6 +2,7 @@ from kivy.config import Config
 
 Config.set('graphics', 'resizable', 0)
 
+import datetime
 import threading
 from kivy.clock import mainthread
 import sqlite3
@@ -22,9 +23,12 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCardSwipe
-from kivymd.uix.card import MDCard
+from kivymd.uix.datatables import MDDataTable
+from kivy.metrics import dp
 from kivy.properties import StringProperty
-from jaraco import clipboard
+from io import BytesIO
+import win32clipboard as clip
+from PIL import Image
 
 
 class AdminLoginDialog(MDBoxLayout):
@@ -47,11 +51,19 @@ class NewMessageDialog(MDBoxLayout):
     pass
 
 
+class NewDraftDialog(MDBoxLayout):
+    pass
+
+
+class ConfirmDraftDeleteDialog(MDBoxLayout):
+    pass
+
+
 class MessageCard(MDCardSwipe):
     text = StringProperty()
 
 
-class DraftCard(MDCard):
+class DraftCard(MDCardSwipe):
     text = StringProperty()
 
 
@@ -94,6 +106,7 @@ class QuotationApp(MDApp):
     promo = None
 
     active_user = None
+    quotation_number = None
 
     dialog = None
     new_user = None
@@ -109,6 +122,7 @@ class QuotationApp(MDApp):
     messages = []
     new_message = ""
     new_message_instance = None
+    delete_draft_instance = None
 
     con = sqlite3.connect("quotation.db")
     cur = con.cursor()
@@ -119,10 +133,18 @@ class QuotationApp(MDApp):
     cur.execute("""CREATE TABLE if not exists history_info (
                                                         quotation_date TEXT,
                                                         quotation_user TEXT,
-                                                        quotation_number TEXT,
-                                                        quotation_values TEXT)""")
+                                                        quotation_number TEXT)""")
     cur.execute("""CREATE TABLE if not exists drafts (draft TEXT)""")
     con.commit()
+
+    history_check = cur.execute("SELECT quotation_user FROM history_info WHERE quotation_user='ADMINISTRADOR'")
+
+    if history_check.fetchone() is None:
+        current_time = datetime.datetime.now()
+        now = f"{current_time.day}/{current_time.month}/{current_time.year}  {current_time.hour}:{current_time.minute}:{current_time.second}"
+        cur.execute("""INSERT INTO history_info (quotation_date, quotation_user, quotation_number)
+                                        VALUES (?, 'ADMINISTRADOR', '0000000000000')""", [now])
+        con.commit()
 
     drafts_check = cur.execute(
         "SELECT draft FROM drafts WHERE draft='Aceitamos pagamentos em até 4x sem juros no cartão, ou podemos fazer um desconto de 10% em pagamento à vista, sendo o pagamento 30% em depósito bancário e o restante em espécie no check-in.'")
@@ -133,9 +155,6 @@ class QuotationApp(MDApp):
         con.commit()
         cur.execute(
             """INSERT INTO drafts VALUES ('Estamos na Rua Travessa da Pedra nº 2, em Monte Verde (Camanducaia-MG), à 900m da avenida principal.')""")
-        con.commit()
-        cur.execute(
-            """INSERT INTO drafts VALUES ('O Hotel Meissner Hof está localizado a 900 metros do centro de Monte Verde, em Minas Gerais. Rodeado por uma natureza exuberante, o Hotel está situado em um extenso jardim de 30 mil metros quadrados, com lindos bosques de Araucárias e Hortênsias, o que torna sua experiência muito aconchegante e inesquecível.')""")
         con.commit()
 
     admin_check = cur.execute("SELECT user_name FROM users_info WHERE user_name='ADMINISTRADOR'")
@@ -148,16 +167,23 @@ class QuotationApp(MDApp):
     pull_users = cur.execute("SELECT * FROM users_info")
     pull_users = pull_users.fetchall()
 
+    pull_history = cur.execute("SELECT * FROM history_info")
+    pull_history = pull_history.fetchall()
+
     pull_drafts = cur.execute("SELECT * FROM drafts")
     pull_drafts = pull_drafts.fetchall()
 
     con.close()
 
     users_info = {}
+    history_info = []
     drafts = []
 
     for user in pull_users:
         users_info[user[0]] = {"password": user[1], "name": user[2]}
+
+    for quotation in pull_history:
+        history_info.append(quotation)
 
     for draft in pull_drafts:
         drafts.append(draft[0])
@@ -203,11 +229,18 @@ class QuotationApp(MDApp):
             self.dialog.content_cls.ids.new_message_alert.text = ""
             self.new_message = self.dialog.content_cls.ids.new_message_field.text
             self.add_message(self.new_message_instance)
-        elif self.dialog is not None:
+        elif self.dialog is not None and self.root.current == "send":
             self.dialog.content_cls.ids.new_message_alert.color = 1, 0, 0, 1
             self.dialog.content_cls.ids.new_message_alert.text = "Mensagem Inválida!"
+        elif self.root.current == "drafts" and self.dialog is not None and self.dialog.content_cls.ids.new_draft_field.text != "" and self.dialog.content_cls.ids.new_draft_field.text.isspace() != True:
+            self.add_draft()
+
+        elif self.dialog is not None and self.root.current == "drafts":
+            self.dialog.content_cls.ids.new_draft_alert.color = 1, 0, 0, 1
+            self.dialog.content_cls.ids.new_draft_alert.text = "Texto Inválido!"
         else:
             self.root.get_screen("send").ids.send_alert.text = ""
+            self.root.get_screen("drafts").ids.drafts_alert.text = ""
 
     def user_on_type(self):
         if self.root.current == "login":
@@ -244,10 +277,22 @@ class QuotationApp(MDApp):
                         self.dialog.content_cls.ids.new_message_alert.text = ""
                     except:
                         pass
+            if self.root.current == "drafts":
+                if self.dialog is None:
+                    self.root.get_screen("drafts").ids.send_alert.text = ""
+                else:
+                    try:
+                        self.dialog.content_cls.ids.new_draft_alert.text = ""
+                    except:
+                        pass
             if self.root.current == "history":
                 self.root.get_screen("history").ids.history_alert.text = ""
 
     def login(self):
+
+        if self.root.current == "history":
+            self.root.get_screen("history").ids.history_layout.clear_widgets()
+
         if self.root.get_screen("login").ids.user_number_field.text == "":
 
             self.root.get_screen("login").ids.login_alert.color = 1, 0, 0, 1
@@ -467,7 +512,7 @@ class QuotationApp(MDApp):
 
         self.root.transition.direction = "left" if self.root.current == "login" else "right"
         if self.root.current == "drafts":
-            self.root.transition.direction = "down"
+            self.root.transition.direction = "up"
             self.root.get_screen("drafts").ids.drafts_layout.clear_widgets()
 
         self.root.transition.duration = .05
@@ -793,21 +838,121 @@ class QuotationApp(MDApp):
 
     def call_drafts(self):
 
+        self.root.get_screen("drafts").ids.drafts_alert.text = ""
+
         if self.can_search:
             for draft in self.drafts:
                 self.root.get_screen("drafts").ids.drafts_layout.add_widget(
                     DraftCard(text=draft)
                 )
 
-            self.root.transition.direction = "up"
+            self.root.transition.direction = "down"
             self.root.transition.duration = .05
             self.root.current = "drafts"
 
+    def new_draft_dialog(self):
+        self.dialog = MDDialog(
+            type="custom",
+            content_cls=NewDraftDialog(),
+            radius=[24, 0, 24, 0],
+            buttons=[
+                MDFlatButton(
+                    text="Cancelar",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.dialog_dismiss
+                ),
+                MDFlatButton(
+                    text="Adicionar",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.on_input_validate
+                ),
+            ],
+        )
+        self.dialog.open()
+
     def add_draft(self):
-        pass
+        self.con = sqlite3.connect("quotation.db")
+        self.cur = self.con.cursor()
+        new_draft = [self.dialog.content_cls.ids.new_draft_field.text]
+        self.cur.execute("""INSERT INTO drafts VALUES (?)""", new_draft)
+        self.con.commit()
+
+        pull_drafts = self.cur.execute("SELECT * FROM drafts")
+        pull_drafts = pull_drafts.fetchall()
+        self.con.close()
+
+        self.drafts = []
+        for draft in pull_drafts:
+            self.drafts.append(draft[0])
+        self.root.get_screen("drafts").ids.drafts_layout.clear_widgets()
+        for draft in self.drafts:
+            self.root.get_screen("drafts").ids.drafts_layout.add_widget(
+                DraftCard(text=draft)
+            )
+        self.dialog_dismiss("whatever")
+
+    def remove_draft_dialog(self, draft):
+        self.delete_draft_instance = draft
+        self.dialog = MDDialog(
+            height=20,
+            type="custom",
+            auto_dismiss=False,
+            title="Rascunho",
+            content_cls=ConfirmDraftDeleteDialog(),
+            radius=[24, 0, 24, 0],
+            buttons=[
+                MDFlatButton(
+                    text="NÃO",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.dialog_dismiss
+                ),
+                MDFlatButton(
+                    text="SIM",
+                    theme_text_color="Custom",
+                    text_color=self.theme_cls.primary_color,
+                    on_release=self.remove_draft
+                ),
+            ],
+        )
+        self.dialog.open()
+
+    def remove_draft(self, *args):
+        self.con = sqlite3.connect("quotation.db")
+        self.cur = self.con.cursor()
+        draft = [self.delete_draft_instance.text]
+        self.cur.execute("""DELETE FROM drafts WHERE draft = ?""", draft)
+        self.con.commit()
+
+        pull_drafts = self.cur.execute("SELECT * FROM drafts")
+        pull_drafts = pull_drafts.fetchall()
+        self.con.close()
+
+        self.drafts = []
+        for draft in pull_drafts:
+            self.drafts.append(draft[0])
+        self.root.get_screen("drafts").ids.drafts_layout.clear_widgets()
+        for draft in self.drafts:
+            self.root.get_screen("drafts").ids.drafts_layout.add_widget(
+                DraftCard(text=draft)
+            )
+        self.dialog_dismiss("whatever")
 
     def copy_draft(self, instance):
-        pass
+
+        try:
+            clip.OpenClipboard()
+            clip.EmptyClipboard()
+            clip.SetClipboardText(instance.text, clip.CF_TEXT)
+            clip.CloseClipboard()
+            self.root.get_screen("drafts").ids.drafts_alert.color = self.theme_cls.primary_color
+            self.root.get_screen("drafts").ids.drafts_alert.text = "Copiado!"
+            print(instance.text)
+        except:
+            self.root.get_screen("drafts").ids.drafts_alert.color = 1, 0, 0, 1
+            self.root.get_screen("drafts").ids.drafts_alert.text = "Clique novamente"
 
     def call_result(self):
         self.root.get_screen("send").ids.send_layout.clear_widgets()
@@ -911,6 +1056,24 @@ class QuotationApp(MDApp):
 
     def send_messages(self):
 
+        """
+           def send_to_clipboard(clip_type, data):
+               clip.OpenClipboard()
+               clip.EmptyClipboard()
+               clip.SetClipboardData(clip_type, data)
+               clip.CloseClipboard()
+
+           filepath = 'Ico2.png'
+           image = Image.open(filepath)
+
+           output = BytesIO()
+           image.convert("RGB").save(output, "BMP")
+           data = output.getvalue()[14:]
+           output.close()
+
+           send_to_clipboard(clip.CF_DIB, data)
+           """
+
         self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
         self.set_adults("Adultos")
         self.set_children("Crianças:")
@@ -920,6 +1083,22 @@ class QuotationApp(MDApp):
         self.call_search()
 
     def call_history(self):
+
+        history_table = MDDataTable(
+            use_pagination=True,
+            size_hint=(1, None),
+            height=400,
+            column_data=[
+                ("Data", dp(20)),
+                ("Usuário", dp(30)),
+                ("Nº do Hóspede", dp(30))
+            ],
+            row_data=[quotation for quotation in self.history_info[::-1]],
+            sorted_order="DSC",
+            elevation=2,
+        )
+        self.root.get_screen("history").ids.history_layout.add_widget(history_table)
+
         self.root.get_screen("login").ids.login_alert.color = self.theme_cls.primary_color
         self.root.get_screen("login").ids.login_alert.text = "Carregando..."
 

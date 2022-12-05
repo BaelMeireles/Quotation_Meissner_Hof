@@ -36,10 +36,20 @@ WindowManager:
     adaptive_height: True
     ripple_behavior: True
     padding: 2
-    on_release: app.copy_draft(root)
 
-    MDBoxLayout:
-        adaptive_height: True
+    MDCardSwipeLayerBox:
+
+        MDIconButton:
+            icon: "file"
+            pos_hint: {"center_y": .5}
+            on_release: app.copy_draft(root)
+
+        MDIconButton:
+            icon: "trash-can"
+            pos_hint: {"center_y": .5}
+            on_release: app.remove_draft_dialog(root)
+
+    MDCardSwipeFrontBox:
 
         MDLabel:
             text: root.text
@@ -111,6 +121,46 @@ WindowManager:
         bold: True
         halign : "center"
         pos_hint: {"center_x": .5}
+
+<NewDraftDialog>
+    orientation: "vertical"
+    spacing: 40
+    adaptive_height: True
+
+    MDLabel:
+        text: "Novo Rascunho"
+        bold: True
+        halign: "center"
+        font_size: 18
+
+    MDTextFieldRect:
+        id: new_draft_field
+        multiline: True
+        size_hint: 1, None
+        height: "120dp"
+        halign: "center"
+        pos_hint: {"center_x": .5, "center_y": .9}
+        on_focus: app.hide_alert()
+        on_text_validate: app.on_input_validate("new_draft_validate")
+
+    MDLabel:
+        id: new_draft_alert
+        text:""
+        font_size: 14
+        bold: True
+        halign : "center"
+        pos_hint: {"center_x": .5}
+
+<ConfirmDraftDeleteDialog>
+    orientation: "vertical"
+    spacing: 40
+    size_hint: 1, None
+    height: 50
+
+    MDLabel:
+        text: "Apagar esse rascunho?"
+        halign: "center"
+        font_size: 14
 
 <UserRegisterDialog>
     orientation: "vertical"
@@ -440,33 +490,34 @@ WindowManager:
     MDBoxLayout:
         orientation: "vertical"
         adaptive_height: True
-        spacing: 50
+        spacing: 10
         padding: (10, 20)
 
         MDScrollView:
             size_hint_y: None
-            height: 300
+            height: 450
 
             MDBoxLayout:
                 id: drafts_layout
                 orientation: "vertical"
                 adaptive_height: True
-                spacing: 2
+                spacing: 5
         MDLabel:
             id: drafts_alert
-            text:""
+            text:
             bold: True
             halign : "center"
             pos_hint: {"center_x": .5}
             size_hint_y: None
             height: 20
+
         MDRaisedButton:
-            id: drafts_button
+            id: add_draft_button
             text: "Adicionar"
             text_color: 1,1,1,1
             size_hint: .5, 1
             pos_hint: {"center_x": .5}
-            on_release: app.add_draft()
+            on_release: app.new_draft_dialog()
 
 <ResultScreen>
     name: "result"
@@ -570,7 +621,7 @@ WindowManager:
         orientation: "vertical"
         adaptive_height: True
         spacing: 20
-        padding: 20
+        padding: (2, 20)
 
         MDBoxLayout:
             id: history_layout
@@ -584,6 +635,8 @@ WindowManager:
             bold: True
             halign : "center"
             pos_hint: {"center_x": .5}
+            size_hint_y: None
+            height: 20
 
         MDRaisedButton:
             id: print_button
