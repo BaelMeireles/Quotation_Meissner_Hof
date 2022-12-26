@@ -3,6 +3,9 @@ from kivy.config import Config
 Config.set('graphics', 'resizable', 0)
 
 import datetime
+import time
+import pywhatkit
+import keyboard
 import threading
 from kivy.clock import mainthread
 import sqlite3
@@ -26,9 +29,7 @@ from kivymd.uix.card import MDCardSwipe
 from kivymd.uix.datatables import MDDataTable
 from kivy.metrics import dp
 from kivy.properties import StringProperty
-from io import BytesIO
 import win32clipboard as clip
-from PIL import Image
 
 
 class AdminLoginDialog(MDBoxLayout):
@@ -191,6 +192,7 @@ class QuotationApp(MDApp):
     def call_login(self):
         if self.can_search:
             if self.root.current == "history":
+                self.root.get_screen("history").ids.history_layout.clear_widgets()
                 self.root.get_screen("history").ids.history_alert.color = self.theme_cls.primary_color
                 self.root.get_screen("history").ids.history_alert.text = "Carregando..."
             else:
@@ -205,7 +207,7 @@ class QuotationApp(MDApp):
 
             self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
             self.set_adults("Adultos")
-            self.set_children("Crianças:")
+            self.set_children("Crianças")
             self.root.get_screen("search").ids.promo_field.text = ""
             self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
 
@@ -287,11 +289,10 @@ class QuotationApp(MDApp):
                         pass
             if self.root.current == "history":
                 self.root.get_screen("history").ids.history_alert.text = ""
+            if self.root.current == "send":
+                self.root.get_screen("send").ids.send_alert.text = ""
 
     def login(self):
-
-        if self.root.current == "history":
-            self.root.get_screen("history").ids.history_layout.clear_widgets()
 
         if self.root.get_screen("login").ids.user_number_field.text == "":
 
@@ -510,6 +511,21 @@ class QuotationApp(MDApp):
         )
         self.child3_menu.bind()
 
+        self.period = None
+        self.period_ = None
+        self.adults = None
+        self.children = None
+        self.child1 = None
+        self.child2 = None
+        self.child3 = None
+        self.promo = None
+
+        self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
+        self.set_adults("Adultos")
+        self.set_children("Crianças")
+        self.root.get_screen("search").ids.promo_field.text = ""
+        self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
+
         self.root.transition.direction = "left" if self.root.current == "login" else "right"
         if self.root.current == "drafts":
             self.root.transition.direction = "up"
@@ -545,7 +561,8 @@ class QuotationApp(MDApp):
             self.root.get_screen("search").ids.adults_menu.text_color = self.theme_cls.accent_color
         else:
             self.root.get_screen("search").ids.adults_menu.text_color = self.theme_cls.primary_color
-        self.adults_menu.dismiss()
+        if self.adults_menu is not None:
+            self.adults_menu.dismiss()
 
     def set_children(self, item):
         self.root.get_screen("search").ids.children_menu.text = f"[b]{item}:[/b]"
@@ -600,20 +617,23 @@ class QuotationApp(MDApp):
             self.root.get_screen("search").ids.child3_menu.text_color = self.theme_cls.accent_color
 
             self.root.get_screen("search").ids.children_menu.text_color = self.theme_cls.accent_color
-
-        self.children_menu.dismiss()
+        if self.children_menu is not None:
+            self.children_menu.dismiss()
 
     def set_child1(self, item):
         self.root.get_screen("search").ids.child1_menu.text = f"[b]{item}[/b]"
-        self.child1_menu.dismiss()
+        if self.child1_menu is not None:
+            self.child1_menu.dismiss()
 
     def set_child2(self, item):
         self.root.get_screen("search").ids.child2_menu.text = f"[b]{item}[/b]"
-        self.child2_menu.dismiss()
+        if self.child2_menu is not None:
+            self.child2_menu.dismiss()
 
     def set_child3(self, item):
         self.root.get_screen("search").ids.child3_menu.text = f"[b]{item}[/b]"
-        self.child3_menu.dismiss()
+        if self.child3_menu is not None:
+            self.child3_menu.dismiss()
 
     def pre_gather_info(self):
         if self.can_search:
@@ -686,7 +706,7 @@ class QuotationApp(MDApp):
                 self.promo = ""
 
             url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period_}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
-
+            print(url)
             options = Options()
             options.add_argument('--headless')
             browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -949,7 +969,6 @@ class QuotationApp(MDApp):
             clip.CloseClipboard()
             self.root.get_screen("drafts").ids.drafts_alert.color = self.theme_cls.primary_color
             self.root.get_screen("drafts").ids.drafts_alert.text = "Copiado!"
-            print(instance.text)
         except:
             self.root.get_screen("drafts").ids.drafts_alert.color = 1, 0, 0, 1
             self.root.get_screen("drafts").ids.drafts_alert.text = "Clique novamente"
@@ -1056,31 +1075,50 @@ class QuotationApp(MDApp):
 
     def send_messages(self):
 
-        """
-           def send_to_clipboard(clip_type, data):
-               clip.OpenClipboard()
-               clip.EmptyClipboard()
-               clip.SetClipboardData(clip_type, data)
-               clip.CloseClipboard()
+        num = ""
+        for char in self.root.get_screen("send").ids.phone_number_field.text:
+            if char.isnumeric():
+                num += char
 
-           filepath = 'Ico2.png'
-           image = Image.open(filepath)
+        if num == "":
+            self.root.get_screen("send").ids.send_alert.color = 1, 0, 0, 1
+            self.root.get_screen("send").ids.send_alert.text = "Insira o número de WhatsApp!"
+        else:
+            self.root.get_screen("send").ids.send_alert.color = self.theme_cls.primary_color
+            self.root.get_screen("send").ids.send_alert.text = "Enviando..."
 
-           output = BytesIO()
-           image.convert("RGB").save(output, "BMP")
-           data = output.getvalue()[14:]
-           output.close()
+            options = Options()
+            options.add_argument("--start-maximized")
+            options.add_experimental_option("detach", True)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            url = f"https://wa.me/{num}"
+            browser.get(url)
 
-           send_to_clipboard(clip.CF_DIB, data)
-           """
+            self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
+            self.set_adults("Adultos")
+            self.set_children("Crianças")
+            self.root.get_screen("search").ids.promo_field.text = ""
+            self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
 
-        self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
-        self.set_adults("Adultos")
-        self.set_children("Crianças:")
-        self.root.get_screen("search").ids.promo_field.text = ""
-        self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
+            self.con = sqlite3.connect("quotation.db")
+            self.cur = self.con.cursor()
+            current_time = datetime.datetime.now()
+            now = f"{current_time.day}/{current_time.month}/{current_time.year}  {current_time.hour}:{current_time.minute}:{current_time.second}"
+            self.cur.execute('''INSERT INTO history_info (quotation_date, quotation_user, quotation_number)
+                                                    VALUES (?, ?, ?)
+                                        ''', [(now), (self.active_user), (num)])
+            self.con.commit()
 
-        self.call_search()
+            pull_history = self.cur.execute("SELECT * FROM history_info")
+            pull_history = pull_history.fetchall()
+            self.con.close()
+
+            self.history_info = []
+
+            for quotation in pull_history:
+                self.history_info.append(quotation)
+
+            self.call_search()
 
     def call_history(self):
 
