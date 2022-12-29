@@ -2,18 +2,22 @@ from kivy.config import Config
 
 Config.set('graphics', 'resizable', 0)
 
+import os
 import datetime
 import time
 import pywhatkit
-import keyboard
 import threading
 from kivy.clock import mainthread
 import sqlite3
 from bs4 import BeautifulSoup
 from urllib.error import HTTPError, URLError
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from kivy.lang import Builder
 from kivy.core.window import Window
@@ -511,20 +515,12 @@ class QuotationApp(MDApp):
         )
         self.child3_menu.bind()
 
-        self.period = None
-        self.period_ = None
-        self.adults = None
-        self.children = None
-        self.child1 = None
-        self.child2 = None
-        self.child3 = None
-        self.promo = None
-
         self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
         self.set_adults("Adultos")
         self.set_children("Crianças")
         self.root.get_screen("search").ids.promo_field.text = ""
         self.root.get_screen("search").ids.promo_field.hint_text = "Promoção (opcional)"
+        self.root.get_screen("send").ids.phone_number_field.text = ""
 
         self.root.transition.direction = "left" if self.root.current == "login" else "right"
         if self.root.current == "drafts":
@@ -682,20 +678,20 @@ class QuotationApp(MDApp):
 
             if self.root.get_screen("search").ids.child2_menu.text != "[b]-[/b]":
                 age = ""
-                for char in self.root.get_screen('search').ids.child1_menu.text:
+                for char in self.root.get_screen('search').ids.child2_menu.text:
                     if char.isdigit():
                         age += char
-                self.child1 = f"&childrenage={age}" \
+                self.child2 = f"&childrenage={age}" \
                     if self.root.get_screen("search").ids.child2_menu.text != "[b]Bebê[/b]" else "&childrenage=0"
             else:
                 self.child2 = ""
 
             if self.root.get_screen("search").ids.child3_menu.text != "[b]-[/b]":
                 age = ""
-                for char in self.root.get_screen('search').ids.child1_menu.text:
+                for char in self.root.get_screen('search').ids.child3_menu.text:
                     if char.isdigit():
                         age += char
-                self.child1 = f"&childrenage={age}" \
+                self.child3 = f"&childrenage={age}" \
                     if self.root.get_screen("search").ids.child3_menu.text != "[b]Bebê[/b]" else "&childrenage=0"
             else:
                 self.child3 = ""
@@ -707,12 +703,23 @@ class QuotationApp(MDApp):
 
             url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period_}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
             print(url)
+
+            period = None
+            period_ = None
+            adults = None
+            children = None
+            child1 = None
+            child2 = None
+            child3 = None
+            promo = None
+
             options = Options()
             options.add_argument('--headless')
             browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             browser.get(url)
             soup = BeautifulSoup(browser.page_source, "html.parser")
             rooms = soup.find_all("div", {"class": "room-item"})
+            browser.quit()
             self.available = []
             for room in rooms:
                 divs = room.find_all("div", {"class": None})
@@ -1087,13 +1094,6 @@ class QuotationApp(MDApp):
             self.root.get_screen("send").ids.send_alert.color = self.theme_cls.primary_color
             self.root.get_screen("send").ids.send_alert.text = "Enviando..."
 
-            options = Options()
-            options.add_argument("--start-maximized")
-            options.add_experimental_option("detach", True)
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            url = f"https://wa.me/{num}"
-            browser.get(url)
-
             self.root.get_screen("search").ids.period_button.text = "[b]Período[/b]"
             self.set_adults("Adultos")
             self.set_children("Crianças")
@@ -1117,6 +1117,22 @@ class QuotationApp(MDApp):
 
             for quotation in pull_history:
                 self.history_info.append(quotation)
+
+            try:
+                options = Options()
+                options.add_argument("--start-maximized")
+                options.add_argument(rf"--user-data-dir=C:\Users\{os.getlogin()}\AppData\Local\Google\Chrome\User Data")
+                options.add_experimental_option("detach", True)
+                browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+                browser.execute_script("window.open('');")
+                browser.switch_to.window(browser.window_handles[-1])
+                browser.get(f"https://wa.me/{num}")
+                iniciar_conversa = browser.find_element(By.ID, "action-button")
+                iniciar_conversa.click()
+                time.sleep(3)
+            except:
+                pass
 
             self.call_search()
 

@@ -579,6 +579,7 @@ WindowManager:
             hint_text: "Nº do Hóspede"
             height: "30dp"
             on_focus: app.hide_alert()
+            on_text_validate: app.send_messages()
 
         MDScrollView:
             size_hint_y: None
