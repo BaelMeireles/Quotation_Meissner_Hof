@@ -5,7 +5,6 @@ Config.set('graphics', 'resizable', 0)
 import os
 import datetime
 import time
-import pywhatkit
 import threading
 from kivy.clock import mainthread
 import sqlite3
@@ -15,8 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from kivy.lang import Builder
@@ -109,6 +107,19 @@ class QuotationApp(MDApp):
     child2 = None
     child3 = None
     promo = None
+
+    os.system("taskkill /im chrome.exe /f")
+    options = Options()
+    options.add_argument("--start-maximized")
+    options.add_argument(rf"--user-data-dir=C:\Users\{os.getlogin()}\AppData\Local\Google\Chrome\User Data")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--disable-dev-shm-using")
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("detach", True)
+    send_browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    send_browser.get("https://web.whatsapp.com/")
 
     active_user = None
     quotation_number = None
@@ -1117,22 +1128,47 @@ class QuotationApp(MDApp):
 
             for quotation in pull_history:
                 self.history_info.append(quotation)
-
             try:
-                options = Options()
-                options.add_argument("--start-maximized")
-                options.add_argument(rf"--user-data-dir=C:\Users\{os.getlogin()}\AppData\Local\Google\Chrome\User Data")
-                options.add_experimental_option("detach", True)
-                browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
-                browser.execute_script("window.open('');")
-                browser.switch_to.window(browser.window_handles[-1])
-                browser.get(f"https://wa.me/{num}")
-                iniciar_conversa = browser.find_element(By.ID, "action-button")
+                self.send_browser.execute_script("window.open('');")
+                self.send_browser.switch_to.window(self.send_browser.window_handles[-1])
+                self.send_browser.get(f"https://wa.me/{num}")
+                iniciar_conversa = self.send_browser.find_element(By.ID, "action-button")
                 iniciar_conversa.click()
-                time.sleep(3)
+                time.sleep(1)
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
+                time.sleep(10)
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                for message in self.messages:
+                    if "[FOTOS " in message:
+                        pass
+                    else:
+                        if "\n" in message:
+                            message_parts = message.split("\n")
+                            for part in message_parts:
+                                ActionChains(self.send_browser).send_keys(part).perform()
+                                ActionChains(self.send_browser).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+                            ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
+                        else:
+                            ActionChains(self.send_browser).send_keys(message).perform()
+                            ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
+
             except:
-                pass
+                self.root.get_screen("send").ids.send_alert.color = 1, 0, 0, 1
+                self.root.get_screen("send").ids.send_alert.text = "Algo deu errado!"
+
+
 
             self.call_search()
 
