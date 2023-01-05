@@ -6,6 +6,7 @@ import os
 import datetime
 import time
 import threading
+from PIL import Image
 from kivy.clock import mainthread
 import sqlite3
 from bs4 import BeautifulSoup
@@ -713,7 +714,6 @@ class QuotationApp(MDApp):
                 self.promo = ""
 
             url = f"https://hbook.hsystem.com.br/booking?companyId=5cbe1acdab41d514844a5ac0{self.period_}{self.adults}{self.children}{self.child1}{self.child2}{self.child3}{self.promo}&utm_source=website&utm_medium=search-box&utm_campaign=website"
-            print(url)
 
             period = None
             period_ = None
@@ -1139,36 +1139,46 @@ class QuotationApp(MDApp):
                 ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
                 ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
                 time.sleep(10)
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
-                ActionChains(self.send_browser).send_keys(Keys.TAB).perform()
+                direct = os.getcwd()
+                direct = direct.replace("\\", "/")
                 for message in self.messages:
                     if "[FOTOS " in message:
-                        pass
+                        room = message[7:-1].strip()
+                        clip_button = self.send_browser.find_element(By.XPATH, "//span[@data-testid='clip']")
+                        clip_button.click()
+                        time.sleep(1)
+                        send_images = self.send_browser.find_element(By.XPATH, "//input[@accept='image/*,video/mp4,video/3gpp,video/quicktime']")
+                        directory = f"{direct}/images/rooms/{room}/1.jpg"
+                        send_images.send_keys(directory)
+                        time.sleep(2)
+                        add_images = self.send_browser.find_element(By.XPATH, "//input[@accept='*']")
+                        for file in os.listdir(directory):
+                            if file == "1.jpeg":
+                                pass
+                            else:
+                                directory = f"{direct}/images/rooms/{room}/{file}"
+                                add_images.send_keys(directory)
+                                time.sleep(1)
+                        ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
+                        time.sleep(2)
+
                     else:
                         if "\n" in message:
                             message_parts = message.split("\n")
                             for part in message_parts:
                                 ActionChains(self.send_browser).send_keys(part).perform()
-                                ActionChains(self.send_browser).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
+                                ActionChains(self.send_browser).key_down(Keys.SHIFT).send_keys(Keys.ENTER).key_up(
+                                    Keys.SHIFT).perform()
                             ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
                         else:
                             ActionChains(self.send_browser).send_keys(message).perform()
                             ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
 
-            except:
+            except Exception as e:
+                print(e)
                 self.root.get_screen("send").ids.send_alert.color = 1, 0, 0, 1
                 self.root.get_screen("send").ids.send_alert.text = "Algo deu errado!"
-
-
+                time.sleep(5)
 
             self.call_search()
 
