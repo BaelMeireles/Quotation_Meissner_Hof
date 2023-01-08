@@ -1149,18 +1149,22 @@ class QuotationApp(MDApp):
                         time.sleep(1)
                         send_images = self.send_browser.find_element(By.XPATH, "//input[@accept='image/*,video/mp4,video/3gpp,video/quicktime']")
                         directory = f"{direct}/images/rooms/{room}/1.jpg"
-                        send_images.send_keys(directory)
-                        time.sleep(2)
+                        try:
+                            send_images.send_keys(directory)
+                        except:
+                            room = "CHALÉ PANORÂMICO"
+                            directory = f"{direct}/images/rooms/{room}/1.jpg"
+                            send_images.send_keys(directory)
+
+                        directory = f"{direct}/images/rooms/{room}"
+                        time.sleep(1)
                         add_images = self.send_browser.find_element(By.XPATH, "//input[@accept='*']")
-                        for file in os.listdir(directory):
-                            if file == "1.jpeg":
-                                pass
-                            else:
-                                directory = f"{direct}/images/rooms/{room}/{file}"
-                                add_images.send_keys(directory)
-                                time.sleep(1)
+                        for file in os.listdir(directory)[1:]:
+                            directory = f"{direct}/images/rooms/{room}/{file}"
+                            add_images.send_keys(directory)
+                        time.sleep(1)
                         ActionChains(self.send_browser).send_keys(Keys.ENTER).perform()
-                        time.sleep(2)
+                        time.sleep(1)
 
                     else:
                         if "\n" in message:
@@ -1212,7 +1216,7 @@ class QuotationApp(MDApp):
 
     def build(self):
         Window.size = (270, 600)
-        # self.title = "Cotações"
+        self.title = "Cotações"
         self.theme_cls.theme_style = "Light"
         self.theme_cls.primary_palette = "Green"
         self.theme_cls.accent_palette = "Gray"
